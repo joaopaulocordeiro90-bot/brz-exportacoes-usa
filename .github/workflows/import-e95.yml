@@ -1,0 +1,83 @@
+name: Importar BRZ E95 e publicar Pages
+
+on:
+  push:
+    paths:
+      - BRZ_EXPORTACOES_USA_E95_GITHUB_READY.zip
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: brz-e95-deploy
+  cancel-in-progress: false
+
+jobs:
+  importar-e-publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Obter repositório
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Importar ZIP verificado
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP=BRZ_EXPORTACOES_USA_E95_GITHUB_READY.zip
+          if [[ -f "$ZIP" ]]; then
+            echo "15b8300491b237bcc9bd6169bc0a4e056a7191bc3f4763948c6457ad4edc0b2f  $ZIP" | sha256sum -c -
+            python3 - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          from hashlib import sha256
+          zip_path=Path("BRZ_EXPORTACOES_USA_E95_GITHUB_READY.zip")
+          with ZipFile(zip_path) as z:
+              entries=[i for i in z.infolist() if not i.is_dir()]
+              assert len(entries)==52, f"Esperados 52 arquivos: {len(entries)}"
+              for i in entries:
+                  p=Path(i.filename)
+                  assert not p.is_absolute() and ".." not in p.parts, f"Caminho inválido: {i.filename}"
+                  assert not str(p).startswith(".github"), "ZIP não pode substituir workflows"
+              z.extractall(".")
+          PY
+            sha256sum -c docs/SHA256SUMS.txt
+            git rm -f "$ZIP"
+            git add index.html css js data assets docs tools README.md .nojekyll
+            if ! git diff --cached --quiet; then
+              git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Importar BRZ Exportações USA e95 modular, SHA-256 verificado"
+              git push
+            fi
+          else
+            test -f index.html || { echo "Ainda não existe pacote nem index.html"; exit 1; }
+          fi
+
+      - name: Preparar site estático
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp -a index.html css js data assets _site/
+          touch _site/.nojekyll
+          test -s _site/index.html
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Enviar site ao Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Publicar site
+        id: deployment
+        uses: actions/deploy-pages@v4
