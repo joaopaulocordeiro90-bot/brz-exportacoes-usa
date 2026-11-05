@@ -1,4 +1,4 @@
-name: QA BRZ EUA — Supabase integration
+name: QA BRZ EUA Supabase
 on:
   pull_request:
     branches: [main]
@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Sintaxe JavaScript
+      - name: Validar sintaxe de JavaScript
         run: |
           set -euo pipefail
           find js data -type f -name '*.js' -print0 | xargs -0 -n1 node --check
-      - name: Conferir dados USDA e assets não modificados
+      - name: Conferir integridade dos dados USDA e imagens originais
         run: |
           set -euo pipefail
-          grep -vE '  (\\./)?index\\.html | sha256sum -c -
-      - name: Conferir scripts, CSS e tela de senha
+          grep -v 'index.html' docs/SHA256SUMS.txt | sha256sum -c -
+      - name: Conferir referências e autenticação no HTML
         run: |
           python3 - <<'PY'
           from html.parser import HTMLParser
@@ -30,7 +30,7 @@ jobs:
               def handle_starttag(self,tag,attrs):
                   d=dict(attrs)
                   if d.get('id'):self.ids.add(d['id'])
-                  if tag=='script' and d.get('src'): self.scripts.append(d['src'])
+                  if tag=='script' and d.get('src'):self.scripts.append(d['src'])
                   if tag=='link' and d.get('rel')=='stylesheet':self.css.append(d['href'])
           h=Path('index.html').read_text(encoding='utf-8')
           p=Check();p.feed(h)
@@ -39,37 +39,7 @@ jobs:
               assert Path(ref).is_file(),f'Arquivo ausente: {ref}'
           required=['brz-access-gate','brz-gate-form','brz-gate-password','eua-data','eua-state','brz-i18n']
           assert all(x in p.ids for x in required),set(required)-p.ids
-          assert 'js/core/cloud-sync.js' in p.scripts
-          assert 'js/core/gate-handler.js' in p.scripts
-          assert 'js/core/history-backups.js' in p.scripts
-          assert 'js/core/export-adapter.js' in p.scripts
-          print(f'OK: {len(p.scripts)} scripts, {len(p.css)} folhas CSS e controles de autenticação.')
-          PY
- docs/SHA256SUMS.txt | sha256sum -c -
-      - name: Conferir scripts, CSS e tela de senha
-        run: |
-          python3 - <<'PY'
-          from html.parser import HTMLParser
-          from pathlib import Path
-          class Check(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.scripts=[];self.css=[];self.ids=set()
-              def handle_starttag(self,tag,attrs):
-                  d=dict(attrs)
-                  if d.get('id'):self.ids.add(d['id'])
-                  if tag=='script' and d.get('src'): self.scripts.append(d['src'])
-                  if tag=='link' and d.get('rel')=='stylesheet':self.css.append(d['href'])
-          h=Path('index.html').read_text(encoding='utf-8')
-          p=Check();p.feed(h)
-          for ref in p.scripts+p.css:
-              assert not ref.startswith(('http:','https:')),ref
-              assert Path(ref).is_file(),f'Arquivo ausente: {ref}'
-          required=['brz-access-gate','brz-gate-form','brz-gate-password','eua-data','eua-state','brz-i18n']
-          assert all(x in p.ids for x in required),set(required)-p.ids
-          assert 'js/core/cloud-sync.js' in p.scripts
-          assert 'js/core/gate-handler.js' in p.scripts
-          assert 'js/core/history-backups.js' in p.scripts
-          assert 'js/core/export-adapter.js' in p.scripts
-          print(f'OK: {len(p.scripts)} scripts, {len(p.css)} folhas CSS e controles de autenticação.')
+          for f in ['js/core/cloud-sync.js','js/core/gate-handler.js','js/core/history-backups.js','js/core/export-adapter.js']:
+              assert f in p.scripts
+          print(f'OK: {len(p.scripts)} scripts, {len(p.css)} folhas CSS e autenticação.')
           PY
