@@ -2024,7 +2024,8 @@ function rerenderAll(){
 function collectState(){
   if(window.dynAllOff)try{dynAllOff();}catch(e){}
   document.querySelectorAll('.chart.dynon').forEach(ch=>{const c=ch.closest('.p-card');if(c&&window.dynOff)dynOff(c,true);});
-  const cards={};
+  /* Abas ainda não renderizadas mantêm suas edições pendentes de migração. */
+  const cards=Object.assign({},window.__SAVED__&&window.__SAVED__.cards||{});
   document.querySelectorAll('.p-card').forEach(c=>{
     const cl=c.cloneNode(true);
     const so=c.querySelectorAll('select'), sc=cl.querySelectorAll('select');
@@ -2036,7 +2037,11 @@ function collectState(){
     cl.querySelectorAll('.mini.dyn').forEach(b=>b.remove());
     const chd=cl.querySelector('.chart'); if(chd) chd.classList.remove('dynon');
     cl.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
-    cards[c.dataset.card]={html:cl.innerHTML, style:c.getAttribute('style')||''};
+    const parts=String(c.dataset.card||'').split('|');
+    const catalog=parts.length===2&&E.coms.includes(parts[1])?cardsFor(parts[1]).find(x=>x.id===parts[0]):null;
+    cards[c.dataset.card]={html:cl.innerHTML, style:c.getAttribute('style')||'',
+      sourceBuild:BUILD,sourceDataAtual:E.meta.atual,
+      ...(catalog?{baseTitle:catalog.t,baseSubtitle:catalog.s}:{})};
   });
   return {v:2,build:BUILD,dataAtual:E.meta.atual,ts:Date.now(),cards,
     palette:{navy:NAVY,teal:TEAL,bege:BEGE},
@@ -2160,8 +2165,84 @@ function legHTML(c,com,pais,my,wk){
 }
 
 const rendered={};
+/* BRZ EUA — migração entre builds USDA (somente camada de apresentação).
+   Os gráficos são regenerados com a base oficial atual. Nunca copiar o SVG ou séries de uma build anterior. */
+function applyCardRebase(el,sv,c){
+  if(!sv||typeof sv.html!=='string')return el;
+  const old=document.createElement('div');old.innerHTML=sv.html;
+  const title=old.querySelector('.p-card-t'),subtitle=old.querySelector('.p-card-s');
+  const freshTitle=el.querySelector('.p-card-t'),freshSubtitle=el.querySelector('.p-card-s');
+  const transferText=(previous,current,baseline)=>{
+    if(!previous||!current)return;
+    const text=(previous.textContent||'').trim();
+    if(text && (baseline==null?text!==(current.textContent||'').trim():text!==String(baseline).trim()))current.textContent=previous.textContent;
+    if(previous.getAttribute('style'))current.setAttribute('style',previous.getAttribute('style'));
+  };
+  transferText(title,freshTitle,sv.baseTitle);
+  transferText(subtitle,freshSubtitle,sv.baseSubtitle);
+  if(sv.style)el.setAttribute('style',sv.style);
+  const oldSelects=Array.from(old.querySelectorAll('select[data-role]'));
+  const rerender=[];
+  for(const os of oldSelects){
+    const role=os.dataset.role,ns=el.querySelector('select[data-role="'+role+'"]');
+    if(!ns)continue;
+    const selected=os.querySelector('option[selected]')?.value ?? os.value;
+    if(Array.from(ns.options).some(o=>o.value===selected) && ns.value!==selected){ns.value=selected;rerender.push(role);}
+  }
+  if(rerender.length && typeof el._syncControls==='function')el._syncControls();
+  /* Cores reaplicadas pela identidade da série/legenda, não por índice do gráfico. */
+  const legends=new Map();
+  old.querySelectorAll('.lg span').forEach(span=>{
+    const name=(span.querySelector('b')?.textContent||'').trim();
+    const input=span.querySelector('input.lgc');
+    if(name&&input)legends.set(name,{color:input.getAttribute('value')||input.value,
+      labelStyle:span.querySelector('b')?.getAttribute('style')||'',spanStyle:span.getAttribute('style')||''});
+  });
+  let redraw=false;
+  const applyLegends=()=>{
+    el.querySelectorAll('.lg span').forEach(span=>{
+      const name=(span.querySelector('b')?.textContent||'').trim(),stored=legends.get(name),input=span.querySelector('input.lgc');
+      if(!stored||!input)return;
+      if(/^#[0-9a-f]{6}$/i.test(stored.color)){
+        const cssVar=input.dataset.var;
+        if(cssVar){el._vars=el._vars||{};if(el._vars[cssVar]!==stored.color){el._vars[cssVar]=stored.color;redraw=true;}el.style.setProperty(cssVar,stored.color);}
+        input.value=stored.color;
+      }
+      if(stored.labelStyle&&span.querySelector('b'))span.querySelector('b').setAttribute('style',stored.labelStyle);
+      if(stored.spanStyle&&!/opacity:\s*0(?:\.35)?;?/.test(stored.spanStyle))span.setAttribute('style',stored.spanStyle);
+    });
+  };
+  applyLegends();
+  if(redraw&&typeof el._draw==='function')el._draw();
+  applyLegends();
+  /* Fontes de rótulos nominais, sem reutilizar coordenadas ou valores antigos. */
+  const oldLabels=new Map();
+  old.querySelectorAll('.chart svg text').forEach(t=>{
+    const value=(t.textContent||'').trim();
+    if(!value||!/[^\W\d_]/u.test(value)||/\d/.test(value))return;
+    if(t.hasAttribute('style'))oldLabels.set(value,t.getAttribute('style'));
+  });
+  el.querySelectorAll('.chart svg text').forEach(t=>{
+    const value=(t.textContent||'').trim(),style=oldLabels.get(value);
+    if(style)t.setAttribute('style',style);
+  });
+  /* Reaplicar após _draw(), que pode executar typoApply e redefinir fontes. */
+  transferText(title,freshTitle,sv.baseTitle);
+  transferText(subtitle,freshSubtitle,sv.baseSubtitle);
+  return el;
+}
 function buildCard(com,c){
-    const sv=window.__SAVED__&&window.__SAVED__.cards&&window.__SAVED__.cards[c.id+'|'+com];
+    const key=c.id+'|'+com;
+    const sv=window.__SAVED__&&window.__SAVED__.cards&&window.__SAVED__.cards[key];
+    if(sv && ((sv.sourceBuild && sv.sourceBuild!==BUILD) || (sv.sourceDataAtual && sv.sourceDataAtual!==E.meta.atual))){
+      delete window.__SAVED__.cards[key];
+      let rebuilt;
+      try{rebuilt=buildCard(com,c);applyCardRebase(rebuilt,sv,c);}
+      catch(e){window.__SAVED__.cards[key]=sv;throw e;}
+      window.__SAVED__.cards[key]={html:rebuilt.innerHTML,style:rebuilt.getAttribute('style')||'',
+        sourceBuild:BUILD,sourceDataAtual:E.meta.atual,baseTitle:c.t,baseSubtitle:c.s};
+      return rebuilt;
+    }
     if(sv && !(c.id==='commitpct' && (!sv.html.includes('data-role="country"')||!sv.html.includes('data-commitpct-axis="e79"'))) && !(c.id==='heatcommit'&&!sv.html.includes('data-role="metric"'))){
       const el=document.createElement('div');el.className='p-card';el.dataset.card=c.id+'|'+com;
       el.innerHTML=sv.html; if(sv.style)el.setAttribute('style',sv.style);
@@ -2783,13 +2864,26 @@ function show(id){
   const ge=g.length===3?g[2]+'/'+g[1]:'';
   document.getElementById('dt').textContent='dados até '+at+' · release '+ge+' · '+BUILD;})();
   const stateOk=s=>!!(s&&s.v>=2&&s.build===BUILD&&s.dataAtual===E.meta.atual);
+  const stateUsable=s=>!!(s&&s.v>=2&&s.cards&&typeof s.cards==='object');
   try{const ls=localStorage.getItem('brz_eua_state');
     if(ls){const st=JSON.parse(ls);
-      if(stateOk(st)&&(!stateOk(window.__SAVED__)||st.ts>window.__SAVED__.ts)){window.__SAVED__=st;}}
+      /* Migrar a cópia local mais recente, mesmo quando a versão USDA mudou. */
+      if(stateUsable(st)&&(!stateUsable(window.__SAVED__)||Number(st.ts||0)>=Number(window.__SAVED__.ts||0)))window.__SAVED__=st;}
   }catch(e){}
   if(!stateOk(window.__SAVED__)){
     const old=window.__SAVED__;
-    window.__SAVED__=old?{v:2,build:BUILD,dataAtual:E.meta.atual,ts:old.ts||Date.now(),cards:{},palette:old.palette||null,typo:old.typo||null}:null;
+    if(old&&old.v>=2&&old.cards&&typeof old.cards==='object'){
+      const saved={};
+      Object.entries(old.cards).forEach(([key,card])=>{
+        if(!card||typeof card.html!=='string')return;
+        saved[key]={...card,sourceBuild:card.sourceBuild||old.build||'legado',
+          sourceDataAtual:card.sourceDataAtual||old.dataAtual||'legado'};
+      });
+      window.__SAVED__={...old,v:2,build:BUILD,dataAtual:E.meta.atual,cards:saved,
+        migratedFrom:{build:old.build||null,dataAtual:old.dataAtual||null}};
+    }else{
+      window.__SAVED__=old?{v:2,build:BUILD,dataAtual:E.meta.atual,ts:old.ts||Date.now(),cards:{},palette:old.palette||null,typo:old.typo||null}:null;
+    }
     E.coms.forEach(c=>{const g=document.getElementById('g-'+c);if(g)g.innerHTML='';});
   }
   if(window.__SAVED__&&window.__SAVED__.palette){
