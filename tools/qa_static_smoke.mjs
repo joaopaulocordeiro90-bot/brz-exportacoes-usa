@@ -10,9 +10,9 @@ page.on('request',r=>urls.push(r.url()));
 await page.route('**/js/core/gate-handler.js',async route=>{
   const response=await route.fetch();
   let code=await response.text();
-  assert(code.includes("const EXPECTED_HASH='d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922'"));
-  code=code.replace("bdb68e4315ad5f32f2876ae6d39dca89","746573742d73616c742d66726f6e74656e64")
-    .replace("d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922","c53bdfa605294d5175dc26b8764c7c5ad5d3c229b8c3cbdad63d5201f290ebb7");
+  assert(code.includes("const EXPECTED_HASH='7ec918667972eff2aaf4506fa911126580d2d528d30d9370ed69c4699964df52'"));
+  code=code.replace("0bed476b092efc156b2d97a673ce3af5","746573742d73616c742d66726f6e74656e64")
+    .replace("7ec918667972eff2aaf4506fa911126580d2d528d30d9370ed69c4699964df52","e9fbb7360c5e7f4f1fafd3c62bd8430d10aeefbb5b796fe5c79e1b4f85866045");
   await route.fulfill({response,body:code});
 });
 await page.goto('http://127.0.0.1:8000/',{waitUntil:'load'});
@@ -22,7 +22,7 @@ await page.locator('#brz-gate-password').fill('senha-errada');
 await page.locator('#brz-gate-form button[type="submit"]').click();
 await page.waitForFunction(()=>document.querySelector('#brz-gate-error').textContent.includes('incorreta'));
 assert(await gate.isVisible());
-await page.locator('#brz-gate-password').fill('qa-test-password');
+await page.locator('#brz-gate-password').fill('314159');
 await page.locator('#brz-gate-form button[type="submit"]').click();
 await page.waitForFunction(()=>document.documentElement.classList.contains('brz-access-granted'));
 assert.equal(await gate.isVisible(),false);
