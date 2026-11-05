@@ -125,12 +125,13 @@
     "vendas_estimativas": "E.deep.vendEst[<data ISO>] aceita cy:[min,max], nc:[min,max] e comb:[min,max] por commodity. __combined:true continua válido quando TODAS as commodities vêm apenas com faixa total. O modo misto permite split em algumas linhas e comb em outras; comb ocupa Corrente/Total* e Nova fica em travessão. A tabela usa rótulos semânticos Corrente/Nova porque trigo, soja/milho e farelo/óleo viram o MY em datas diferentes. O comentário compara corrente+nova contra comb. As células seguem contenteditable e _vendRestore preserva edições. Nunca inventar split por safra."
   },
   "last_build": {
-    "id": "e96",
+    "id": "e97",
     "data": "2026-11-05",
     "hash_prefix": "sha256[:16] informado na entrega",
-    "resumo": "Atualização semanal CWR XLSX 29/10/2026: cinco commodities, snapshots por países, vendas oficiais, embarques, commitment e comparativo com consenso já salvo. Gráficos dinâmicos sem alterações e preservação de personalizações."
+    "resumo": "Correção da restauração de semana: gráficos e controles semanais avançam automaticamente para a semana oficial mais recente (soja/milho 9, trigo 22, farelo/óleo 5) ao migrar snapshots; títulos/legendas/cores preservados. Dados USDA 29/10 inalterados."
   },
   "build_log": [
+    "e97 (05Nov): corrige seleção semanal congelada em snapshots históricos: ao migrar e75/e95/e96, o gráfico usa a semana CWR atual (soja/milho 9, trigo 22, farelo/óleo 5); preserva país, MY, títulos, legendas e paleta. Sem alteração nos dados USDA ou senha.",
     "05Nov: autenticação de interface local com senha exclusiva (PBKDF2), sem chamadas ao Supabase; apresentação consolidada com 88 snapshots, persistência no navegador e exportação offline. Os dados USDA continuam públicos por serem servidos pelo GitHub Pages; isto NÃO é autenticação de borda. Projeto Supabase preservado para reutilização.",
     "e96 (05Nov): Country Detail XLSX oficial da semana 29/10, precisão 0,001 mil t; cinco commodities, 64 séries de destino/MUNDO, net sales por MY, shipments, acumulado, outstanding, commitment, China e percentis atualizados. Expectativas preexistentes preservadas na mesma tabela. Sem alterar motor gráfico, CSS ou infraestrutura Supabase.",
     "e95 (04Nov): cartão Óleo de soja da tela inicial passou a usar a foto enviada pelo João (garrafa de óleo, tigela e grãos sobre madeira), 612×408 px, JPEG embutido; saiu a classe gen e a arte SVG gerada no e88. Os 7 cartões da tela inicial agora usam foto.",
@@ -195,7 +196,7 @@
     "[LAYOUT] e68 restaurou grupos por safra; se consenso combinado se repetir, preservá-lo como faixa conjunta mesmo com colunas MY explícitas. NÃO dividir sem fonte.",
     "[CONSENSO 27/28] Verificar faixas desagregadas ao receber fonte específica. Em 01/10/2026 só há faixa combinada confirmada, por isso n/d na coluna da safra seguinte. Não substituir por zero nem por range conjectural."
   ],
-  "latest_build": "e96 · 05Nov",
+  "latest_build": "e97 · 05Nov",
   "pending_2026_10_22": "CONCLUÍDO: Weekly Highlights de 22/10 recebido e switched Unknown→China=255 kt validado. Weekly Highlights 15/10 segue pendente.",
   "padrao_brz_safra": {
     "modelo": "BRZ SAFRA s32 (04/11/2026)",
@@ -215,7 +216,7 @@
 <header class="topnav">
   <div class="brand"><b>BRZ</b><span>Exportações Americanas · USDA ESR</span></div>
   <nav class="topmenu" id="topmenu"><button data-go="scr-menu" class="active">Inicial</button><button data-go="scr-soja" class="">Soja</button><button data-go="scr-farelo">Farelo de soja</button><button data-go="scr-oleo">Óleo de soja</button><button data-go="scr-milho">Milho</button><button data-go="scr-trigo">Trigo</button><button data-go="scr-vendas">Vendas Semanais</button><button data-go="scr-base">Base</button><button data-go="scr-opcoes" class="">Opções</button></nav>
-  <span class="hint" id="dt">dados até 29/out/2026 · release 05/11 · e96 · 05Nov</span>
+  <span class="hint" id="dt">dados até 29/out/2026 · release 05/11 · e97 · 05Nov</span>
 <button id="gear" title="Ativar/desativar modo edição" class="">⚙ Edição</button>
   <div class="lang-switch" id="lang-switch" role="group" aria-label="Idioma">
     <button type="button" class="active" data-lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil)" aria-pressed="true">
