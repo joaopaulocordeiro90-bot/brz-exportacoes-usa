@@ -66,6 +66,42 @@ assert.equal(await page.evaluate(()=>E.dados.oleo.s.MUNDO.at(-1)[3]+E.dados.oleo
 const officialComment=await page.locator('[data-card="vendtxt|rep"] .vend-txt').innerText();
 assert(officialComment.includes('1.456'),'Comentário deve tratar o realizado 29/10');
 assert(officialComment.includes('950-2.200'),'Comentário deve comparar o realizado 29/10 com seu consenso original');
+
+// Simular snapshot LEGADO salvo no Supabase, com valores 22/10 e erro em trigo.
+// A restauração deve preservar formatação, mas não reintroduzir expectativas antigas.
+const legacy=await page.evaluate(()=>{
+ const t=document.querySelector('[data-card="vendsem|rep"]');
+ const wrap=t.cloneNode(true);
+ wrap.querySelector('table.vtab').removeAttribute('data-est-week');
+ wrap.querySelector('[data-est="trigo-comb"]').textContent='200-211554';
+ wrap.querySelector('[data-est="milho-comb"]').textContent='1000-1600';
+ wrap.querySelector('[data-est="soja-comb"]').textContent='1300-2800';
+ wrap.querySelector('[data-est="farelo-comb"]').textContent='200-450';
+ wrap.querySelector('[data-est="oleo-comb"]').textContent='0-10';
+ wrap.querySelector('.p-card-t').textContent='TÍTULO PERSONALIZADO';
+ wrap.querySelector('.p-card-t').style.fontSize='21px';
+ wrap.querySelector('.p-card-s').textContent='Em mil t · semana até 10/22/26 · export sales';
+ const old=wrap.innerHTML; // Supabase salva innerHTML, NÃO o HTML externo
+ t.remove();
+ window.__SAVED__=window.__SAVED__||{};window.__SAVED__.cards=window.__SAVED__.cards||{};
+ window.__SAVED__.cards['vendsem|rep']={html:old};
+ renderVendas();
+ const out=document.querySelector('[data-card="vendsem|rep"]');
+ return {
+   title:out.querySelector('.p-card-t').textContent,
+   titleSize:out.querySelector('.p-card-t').style.fontSize,
+   week:out.querySelector('table.vtab').dataset.estWeek,
+   values:Object.fromEntries(['trigo','milho','soja','farelo','oleo'].map(c=>[c,out.querySelector('[data-est="'+c+'-comb"]').textContent.trim()])),
+   subtitle:out.querySelector('.p-card-s').textContent
+ };
+});
+assert.equal(legacy.title,'TÍTULO PERSONALIZADO');
+assert.equal(legacy.titleSize,'21px');
+assert.equal(legacy.week,'2026-10-29');
+assert.deepEqual(legacy.values,{trigo:'300-500',milho:'800-1400',soja:'950-2200',farelo:'200-350',oleo:'0-10'});
+assert(legacy.subtitle.includes('29/10/26'),'Data anterior indevidamente restaurada');
+assert.equal(await page.locator('#g-vendas table.vtab').count(),1);
+
 await page.locator('#topmenu button[data-go="scr-opcoes"]').click();
 await page.locator('#op-save').click();
 await page.waitForTimeout(2500);
