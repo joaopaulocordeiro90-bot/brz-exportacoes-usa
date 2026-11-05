@@ -47,6 +47,15 @@ await page.waitForTimeout(2200);
 assert(saveCount>=1,"e95 save not synchronized");
 const oldState=sections.display_state.payload;
 assert(oldState.cards["netsafra|soja"].html.includes("VALOR ANTIGO 100"));
+const sentinel="__qa_unopened_card|soja";
+const pendingCard={html:'<div class="qa-pending">SNAPSHOT DE OUTRA ABA</div>',style:"",
+  sourceBuild:"e95 · 04Nov",sourceDataAtual:original.data};
+oldState.cards[sentinel]=pendingCard;
+await page.evaluate(({sentinel,pendingCard})=>{
+ const stored=JSON.parse(localStorage.getItem("brz_eua_state"));
+ stored.cards[sentinel]=pendingCard;
+ localStorage.setItem("brz_eua_state",JSON.stringify(stored));
+},{sentinel,pendingCard});
 const totalKeys=Object.keys(oldState.cards).length;
 assert(totalKeys>1,"expected multiple cards");
 await page.route("**/js/core/app.js",async route=>{
@@ -89,12 +98,13 @@ assert.equal(next.oldSvgMarker,false,"Old USDA SVG copied into new build");
 assert.equal(next.updatedBuild,"e96 · 12Nov");
 assert.equal(next.updatedData,"2026-11-05");
 await page.evaluate(()=>saveState());
-const kept=await page.evaluate(()=>({
+const kept=await page.evaluate(sentinel=>({
  count:Object.keys(window.__SAVED__.cards).length,
- pending:Object.values(window.__SAVED__.cards).filter(s=>s.sourceBuild!=="e96 · 12Nov").length
-}));
+ pending:Object.values(window.__SAVED__.cards).filter(s=>s.sourceBuild!=="e96 · 12Nov").length,
+ pendingKept:window.__SAVED__.cards[sentinel]?.html?.includes("SNAPSHOT DE OUTRA ABA")||false
+}),sentinel);
 assert(kept.count>=totalKeys,"Unrendered cards lost on save");
-assert(kept.pending>0,"Expected untouched lazy card snapshots to be kept");
+assert(kept.pendingKept,"Unopened card snapshot lost on save");
 assert.deepEqual(errors,[],"Browser JavaScript errors");
 console.log("VERSION REBASE PASS",JSON.stringify({before:original,after:next,carried:kept,remoteSaveCount:saveCount}));
 await browser.close();
