@@ -1,4 +1,4 @@
-name: QA BRZ EUA Supabase
+name: QA BRZ EUA — Interface independente
 on:
   pull_request:
     branches: [main]
@@ -39,7 +39,7 @@ jobs:
               assert Path(ref).is_file(),f'Arquivo ausente: {ref}'
           required=['brz-access-gate','brz-gate-form','brz-gate-password','eua-data','eua-state','brz-i18n']
           assert all(x in p.ids for x in required),set(required)-p.ids
-          for f in ['js/core/cloud-sync.js','js/core/gate-handler.js','js/core/history-backups.js','js/core/export-adapter.js']:
+          for f in ['js/core/gate-handler.js','js/core/export-adapter.js']:
               assert f in p.scripts
           print(f'OK: {len(p.scripts)} scripts, {len(p.css)} folhas CSS e autenticação.')
           PY
@@ -50,5 +50,5 @@ jobs:
           python3 -m http.server 8000 >/tmp/brz-eua-http.log 2>&1 &
           npm install --no-save playwright@1.56.1
           npx playwright install chromium --with-deps
-          node tools/qa_cloud_smoke.mjs
+          node tools/qa_static_smoke.mjs
           node tools/qa_version_rebase.mjs

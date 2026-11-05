@@ -24,7 +24,7 @@
       <form id="brz-gate-form" autocomplete="off">
         <label for="brz-gate-password">Senha de acesso</label>
         <div class="brz-gate-input">
-          <input id="brz-gate-password" name="password" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Digite sua senha" required autofocus>
+          <input id="brz-gate-password" name="password" type="password" autocomplete="off" placeholder="Digite sua senha" required autofocus>
           <button type="button" class="brz-gate-toggle" id="brz-gate-show" aria-label="Exibir senha">Mostrar</button>
         </div>
         <p id="brz-gate-error" aria-live="polite"></p>
@@ -131,6 +131,7 @@
     "resumo": "Atualização semanal CWR XLSX 29/10/2026: cinco commodities, snapshots por países, vendas oficiais, embarques, commitment e comparativo com consenso já salvo. Gráficos dinâmicos sem alterações e preservação de personalizações."
   },
   "build_log": [
+    "05Nov: autenticação de interface local com senha exclusiva (PBKDF2), sem chamadas ao Supabase; apresentação consolidada com 88 snapshots, persistência no navegador e exportação offline. Os dados USDA continuam públicos por serem servidos pelo GitHub Pages; isto NÃO é autenticação de borda. Projeto Supabase preservado para reutilização.",
     "e96 (05Nov): Country Detail XLSX oficial da semana 29/10, precisão 0,001 mil t; cinco commodities, 64 séries de destino/MUNDO, net sales por MY, shipments, acumulado, outstanding, commitment, China e percentis atualizados. Expectativas preexistentes preservadas na mesma tabela. Sem alterar motor gráfico, CSS ou infraestrutura Supabase.",
     "e95 (04Nov): cartão Óleo de soja da tela inicial passou a usar a foto enviada pelo João (garrafa de óleo, tigela e grãos sobre madeira), 612×408 px, JPEG embutido; saiu a classe gen e a arte SVG gerada no e88. Os 7 cartões da tela inicial agora usam foto.",
     "e94 (04Nov): cartão Farelo de soja da tela inicial passou a usar a foto enviada pelo João (farelo em pilha, saco e pá de madeira), redimensionada para 1280 px, JPEG embutido em data URL; saiu a classe gen e a arte SVG gerada no e88. Os demais cartões da tela inicial seguem iguais.",
@@ -365,6 +366,5 @@
 <script id="brz-i18n" src="js/core/i18n.js"></script>
 
 
-<script src="js/core/cloud-sync.js" data-brz-cloud="1"></script>
-<script defer src="js/core/history-backups.js" data-brz-cloud="1"></script>
+
 </body></html>

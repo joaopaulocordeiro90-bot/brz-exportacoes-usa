@@ -62,3 +62,7 @@ Fase 2 (Supabase, login, sincronização) fica fora desta entrega.
 ## Segurança de publicação
 
 **GitHub Pages é público:** os arquivos HTML, JavaScript e dados embutidos podem ser lidos por terceiros. Não guardar senhas, tokens, chaves de serviço ou informações confidenciais em arquivos publicados. A futura tela de login deverá controlar a operação no servidor; uma tela estática sozinha não restringe acesso ao código ou dados.
+
+
+## Acesso e dependências (05/11/2026)
+A interface tem senha independente, verificada no navegador (PBKDF2); o GitHub Pages continua público e este controle NÃO protege os arquivos publicados contra acesso direto. Não há chamadas nem escrita no projeto Supabase. Estado visual inicial é embutido em `data/eua-state.js` (88 cartões consolidados) e alterações posteriores só são guardadas localmente no navegador ou em HTML exportado. O projeto Supabase histórico foi mantido intacto para reutilização externa. Para confidencialidade de arquivos, migrar o site a hospedagem com controle de acesso no servidor e desativar o Pages público.

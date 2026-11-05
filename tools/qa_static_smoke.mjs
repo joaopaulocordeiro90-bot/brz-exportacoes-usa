@@ -1,0 +1,56 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const page=await browser.newPage({acceptDownloads:true,viewport:{width:1440,height:900}});
+const errors=[],urls=[];
+page.on('pageerror',e=>errors.push(String(e)));
+page.on('request',r=>urls.push(r.url()));
+// Test only: replace verifier values in memory, never publish a valid password.
+await page.route('**/js/core/gate-handler.js',async route=>{
+  const response=await route.fetch();
+  let code=await response.text();
+  assert(code.includes("const EXPECTED_HASH='d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922'"));
+  code=code.replace("bdb68e4315ad5f32f2876ae6d39dca89","746573742d73616c742d66726f6e74656e64")
+    .replace("d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922","c53bdfa605294d5175dc26b8764c7c5ad5d3c229b8c3cbdad63d5201f290ebb7");
+  await route.fulfill({response,body:code});
+});
+await page.goto('http://127.0.0.1:8000/',{waitUntil:'load'});
+const gate=page.locator('#brz-access-gate');
+assert(await gate.isVisible());
+await page.locator('#brz-gate-password').fill('senha-errada');
+await page.locator('#brz-gate-form button[type="submit"]').click();
+await page.waitForFunction(()=>document.querySelector('#brz-gate-error').textContent.includes('incorreta'));
+assert(await gate.isVisible());
+await page.locator('#brz-gate-password').fill('qa-test-password');
+await page.locator('#brz-gate-form button[type="submit"]').click();
+await page.waitForFunction(()=>document.documentElement.classList.contains('brz-access-granted'));
+assert.equal(await gate.isVisible(),false);
+assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
+assert.equal(await page.evaluate(()=>Object.keys(__SAVED__.cards).length),88);
+await page.locator('#topmenu button[data-go="scr-vendas"]').click();
+const table=page.locator('[data-card="vendsem|rep"]');
+await table.waitFor();
+assert.equal(await page.locator('#g-vendas .vtab').count(),1);
+for(const [com,expect] of Object.entries({trigo:'300-500',milho:'800-1400',soja:'950-2200',farelo:'200-350',oleo:'0-10'}))
+  assert.equal(await table.locator('[data-est="'+com+'-comb"]').innerText(),expect);
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].soja.cy),1456.12);
+const palette=await page.evaluate(()=>__SAVED__.palette);
+assert(palette&&palette.navy);
+await page.locator('#topmenu button[data-go="scr-opcoes"]').click();
+await page.locator('#op-save').click();
+assert(await page.evaluate(()=>Boolean(JSON.parse(localStorage.getItem('brz_eua_state')))));
+const downloaded=page.waitForEvent('download',{timeout:65000});
+await page.locator('#op-export').click();
+const file=await downloaded;
+const html=await fs.readFile(await file.path(),'utf8');
+assert(html.startsWith('<!DOCTYPE html>'));
+assert(html.includes('window.E')&&html.includes('window.__SAVED__'));
+assert(!html.includes('id="brz-access-gate"'));
+assert(!html.includes('src="js/core/gate-handler.js"'));
+assert(!html.includes('src="js/core/cloud-sync.js"'));
+assert(!html.includes('supabase.co'));
+assert(!urls.some(url=>/supabase\.co/.test(url)));
+assert.deepEqual(errors,[]);
+console.log('STATIC SMOKE OK — senha, 88 cartões, cinco faixas, exportação offline, sem Supabase');
+await browser.close();
