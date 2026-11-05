@@ -2713,6 +2713,47 @@ function _vendRestore(novo,keepHtml,selT){
   const txO=keep.querySelector('.vend-txt'),txN=novo.querySelector('.vend-txt');
   if(txO&&txN&&txO.getAttribute('data-week')===txN.getAttribute('data-week')&&txO.innerHTML.trim()){txN.innerHTML=txO.innerHTML;novo.dataset.txtKept='1';['data-auto-sig','data-noi18n'].forEach(a=>{if(txO.hasAttribute(a))txN.setAttribute(a,txO.getAttribute(a));else txN.removeAttribute(a);});}
 }
+/* Pré-relatório: expectativa recebida antes do realizado oficial, sem deslocar a
+   semana do USDA nem modificar comentários, gráficos ou indicadores históricos. */
+function buildVendPreReport(){
+  const D=E.deep||{}, est=D.vendEst||{}, actual=D.vendActual||{};
+  const latest=_vendNet('soja').data;
+  const pending=Object.keys(est).filter(d=>d>latest&&!actual[d]&&est[d].__combined).sort().pop();
+  if(!pending)return null;
+  const prev=Object.keys(actual).filter(d=>d<pending).sort().slice(-2).reverse();
+  const fmtDate=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4):'—';
+  const fnum=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
+  const vComb=(day,com)=>{
+    const r=actual[day]&&actual[day][com];
+    return !r||(!Number.isFinite(r.cy)&&!Number.isFinite(r.nc))?'—':fnum((Number(r.cy)||0)+(Number(r.nc)||0));
+  };
+  const fmtRange=com=>{
+    const r=est[pending][com]&&est[pending][com].comb;
+    return r&&r.length===2?fnum(r[0])+'–'+fnum(r[1]):'—';
+  };
+  const rows=VEND_ORD.map(com=>'<tr><td class="cm etext">'+E.nome[com]+'</td>'
+    +'<td class="est etext vend-est-total">'+fmtRange(com)+'</td>'
+    +prev.map(day=>'<td class="etext">'+vComb(day,com)+'</td>').join('')
+    +'</tr>').join('');
+  const el=document.createElement('div');
+  el.id='brz-vendas-pre-report';
+  el.className='p-card vend-wrap';
+  el.style.gridColumn='1 / -1';
+  const src=D.vendEstSources&&D.vendEstSources[pending];
+  const release=src&&src.release?' · divulgação '+fmtDate(src.release):'';
+  el.innerHTML='<div class="p-card-h"><div>'
+    +'<div class="p-card-t">Expectativas para o próximo relatório USDA/FAS</div>'
+    +'<div class="p-card-s">Em mil t · semana até '+fmtDate(pending)+release+' · vendas líquidas, todos os MY combinados</div>'
+    +'</div></div>'
+    +'<table class="vtab"><thead><tr><th>Commodity</th><th>Expectativa '+fmtDate(pending)+'</th>'
+    +prev.map(day=>'<th>Realizado '+fmtDate(day)+'</th>').join('')
+    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<div class="vend-note"><span>Estimativas de analistas (pré-USDA), ainda sem realizado para '+fmtDate(pending)+'. Os resultados oficiais mais recentes permanecem na tabela abaixo; nenhuma divisão por safra foi estimada.</span></div>';
+  if(window.typoApply)typoApply(el);
+  const t=el.querySelector('.p-card-t'),s=el.querySelector('.p-card-s');
+  if(t)t.style.fontSize='18px';if(s)s.style.fontSize='13px';
+  return el;
+}
 function renderVendas(){
   const g=document.getElementById('g-vendas');
   if(!g)return;
@@ -2729,6 +2770,8 @@ function renderVendas(){
   const pT=g.querySelector('[data-card="vendsem|rep"]'),pX=g.querySelector('[data-card="vendtxt|rep"]');
   if(pT)pT.remove(); if(pX)pX.remove();
   g.appendChild(tab); g.appendChild(txt);
+  const prior=g.querySelector('#brz-vendas-pre-report');if(prior)prior.remove();
+  const upcoming=buildVendPreReport();if(upcoming)g.prepend(upcoming);
   /* só agora a tabela existe no DOM: regenerar para que gerarVendTexto enxergue
      as células de estimativa. Não regenera se houver lapidação preservada. */
   const txEl=txt.querySelector('.vend-txt');
