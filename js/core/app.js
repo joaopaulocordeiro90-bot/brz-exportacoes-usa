@@ -1995,7 +1995,7 @@ function baixar(el,tit,cwArg,chArg){
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
 }
 
-const BUILD='e96 · 05Nov';
+const BUILD='e97 · 05Nov';
 let LOGO_URL='';
 try{const _b64=null; }catch(e){}
 function _mkLogoUrl(){try{const b64=LOGO_HREF.split(',')[1];const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return URL.createObjectURL(new Blob([u8],{type:'image/png'}));}catch(e){return LOGO_HREF;}}
@@ -2184,7 +2184,12 @@ function applyCardRebase(el,sv,c){
   const oldSelects=Array.from(old.querySelectorAll('select[data-role]'));
   const rerender=[];
   for(const os of oldSelects){
-    const role=os.dataset.role,ns=el.querySelector('select[data-role="'+role+'"]');
+    const role=os.dataset.role;
+    /* Nunca restaurar a semana selecionada num snapshot de build anterior:
+       gráficos semanais devem acompanhar automaticamente o último CWR/USDA.
+       País, safra e métrica continuam sendo preservados. */
+    if(role==='week')continue;
+    const ns=el.querySelector('select[data-role="'+role+'"]');
     if(!ns)continue;
     const selected=os.querySelector('option[selected]')?.value ?? os.value;
     if(Array.from(ns.options).some(o=>o.value===selected) && ns.value!==selected){ns.value=selected;rerender.push(role);}
