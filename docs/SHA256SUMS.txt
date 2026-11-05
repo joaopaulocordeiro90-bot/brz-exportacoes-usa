@@ -53,5 +53,5 @@ a6f7b88c1a00d661cb937f89a16b004dfe556074a582109f7ad31c85b54d536f  ./js/utils/exc
 1f700e95e424293b1080ae05e58cee0de623c2afb0f475552bf4df1ba26def00  ./tools/manifest.json
 a16cbe885bcd38c2f40a4349da7db8909f5628b0cedd3c241428b4f65258b005  ./tools/modularizar.py
 01d6e8e70e0b593fe7dfc3b79cf5f6568c7da1dacb35796b3f586305ef8b4511  ./tools/qa_static_smoke.mjs
-b6a7b1be195e8e6f55934245b49bdbc1bcdb1b384ffd8cf27c0e69541a6d0a08  ./tools/qa_version_rebase.mjs
+9f34aad84277c8d4f1002f8af99e486707b523116532207824267239458924a8  ./tools/qa_version_rebase.mjs
 98f61d0e90ccb9b206b1179fc1c99c655ade57acb40538a225687e14ea20d5f4  ./tools/remontar_arquivo_unico.py
