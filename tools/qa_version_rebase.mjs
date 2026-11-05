@@ -8,7 +8,7 @@ page.on('pageerror',e=>errors.push(String(e)));
 await page.route('**/js/core/gate-handler.js',async route=>{
  const response=await route.fetch();let s=await response.text();
  s=s.replace('bdb68e4315ad5f32f2876ae6d39dca89','746573742d73616c742d66726f6e74656e64')
- .replace('d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922','c53bdfa605294d5175dc26b8764c7ad5d3c229b8c3cbdad63d5201f290ebb7');
+ .replace('d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922','c53bdfa605294d5175dc26b8764c7c5ad5d3c229b8c3cbdad63d5201f290ebb7');
  await route.fulfill({response,body:s});
 });
 await page.goto('http://127.0.0.1:8000/',{waitUntil:'load'});
