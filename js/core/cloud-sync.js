@@ -195,6 +195,9 @@ function keepSingleFileExport(){
     try{return original.apply(this,arguments);}
     finally{removed.forEach(({node,anchor})=>{anchor.replaceWith(node);});}
   };
+  /* O app original registra o onclick durante a execução síncrona; reatribuir ao wrapper. */
+  const exportBtn=document.getElementById('op-export');
+  if(exportBtn)exportBtn.onclick=window.exportarHTML;
 }
 async function history(){return request("history");}
 async function backupSnapshot(){
