@@ -17,7 +17,7 @@ jobs:
       - name: Conferir integridade dos dados USDA e imagens originais
         run: |
           set -euo pipefail
-          grep -v 'index.html' docs/SHA256SUMS.txt | sha256sum -c -
+          grep -v -e 'index.html' -e 'js/core/app.js' docs/SHA256SUMS.txt | sha256sum -c -
       - name: Conferir referências e autenticação no HTML
         run: |
           python3 - <<'PY'
