@@ -28,6 +28,28 @@ await page.waitForFunction(()=>document.documentElement.classList.contains('brz-
 assert.equal(await gate.isVisible(),false);
 assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
 assert.equal(await page.evaluate(()=>Object.keys(__SAVED__.cards).length),88);
+// Regressão: cards originalmente serializados em semana 7 da soja,
+// semana 21 do trigo e semana 4 do óleo devem renderizar a última semana oficial.
+// A migração jamais deve congelar week 7/4/21 num snapshot antigo.
+for(const [com,week] of Object.entries({soja:9,milho:9,trigo:22,farelo:5,oleo:5})){
+  await page.evaluate(com=>show('scr-'+com),com);
+  const state=await page.evaluate(com=>{
+    const grid=document.getElementById('g-'+com);
+    const selects=[...grid.querySelectorAll('[data-card] select[data-role="week"]')];
+    return {weeks:selects.map(s=>Number(s.value)),fresh:window.E.dados[com].s.MUNDO.at(-1)[2],
+      world:window.E.dados[com].s.MUNDO.at(-1)[0],count:selects.length};
+  },com);
+  assert.equal(state.fresh,week,`USDA week ${com}`);
+  assert(state.count>=5,`gráficos semanais ${com}`);
+  assert(state.weeks.every(w=>w===week),`snapshot obsoleto ${com}: ${JSON.stringify(state)}`);
+}
+await page.evaluate(()=>show('scr-soja'));
+const soyCard=page.locator('[data-card="netsafra|soja"]');
+assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'9');
+await soyCard.locator('select[data-role="week"]').selectOption('7');
+assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'7','navegação histórica manual preservada');
+await soyCard.locator('select[data-role="week"]').selectOption('9');
+assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'9','retorno à semana oficial');
 await page.locator('#topmenu button[data-go="scr-vendas"]').click();
 const table=page.locator('[data-card="vendsem|rep"]');
 await table.waitFor();
