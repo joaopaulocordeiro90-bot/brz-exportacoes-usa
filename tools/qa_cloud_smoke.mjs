@@ -37,6 +37,17 @@ await page.locator('#brz-gate-form button[type=submit]').click();
 await page.waitForFunction(()=>document.documentElement.classList.contains('brz-access-granted'),{timeout:25000});
 assert.equal(await page.locator('#brz-access-gate').isVisible(),false);
 assert(await page.evaluate(()=>Boolean(window.E&&window.E.meta&&window.BRZSYNC)));
+// Pré-USDA: a expectativa futura é visível sem alterar o realizado oficial.
+await page.locator('#topmenu button[data-go="scr-vendas"]').click();
+await page.locator('#brz-vendas-pre-report').waitFor({state:'visible'});
+const pre=await page.locator('#brz-vendas-pre-report').innerText();
+for(const [commodity,range] of [['Trigo','300,0–500,0'],['Milho','800,0–1.400,0'],['Soja','950,0–2.200,0'],['Farelo','200,0–350,0'],['Óleo','0,0–10,0']]){
+ assert(pre.includes(range),commodity+' expectativa ausente ou incorreta: '+range);
+}
+assert(pre.includes('29/10/26')&&pre.includes('22/10/26')&&pre.includes('15/10/26'));
+assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-22');
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-22'].soja.cy),2576.4);
+assert((await page.locator('[data-card="vendsem|rep"] .p-card-s').innerText()).includes('22/10/26'));
 await page.locator('#topmenu button[data-go="scr-opcoes"]').click();
 await page.locator('#op-save').click();
 await page.waitForTimeout(2500);
