@@ -3,10 +3,10 @@
    não autenticação na borda nem proteção contra acesso direto aos assets. */
 (function(){
 'use strict';
-const KDF_SALT='bdb68e4315ad5f32f2876ae6d39dca89';
-const EXPECTED_HASH='d581a7658e0871fd54ad9c3fef3c504aa2a2b57e0b05fe1e5467439048554922';
+const KDF_SALT='0bed476b092efc156b2d97a673ce3af5';
+const EXPECTED_HASH='7ec918667972eff2aaf4506fa911126580d2d528d30d9370ed69c4699964df52';
 const ITERATIONS=260000;
-const SESSION='brz_eua_local_gate_until_v1';
+const SESSION='brz_eua_local_gate_until_v2';
 const gate=document.getElementById('brz-access-gate');
 const form=document.getElementById('brz-gate-form');
 const field=document.getElementById('brz-gate-password');
