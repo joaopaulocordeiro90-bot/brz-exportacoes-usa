@@ -46,17 +46,26 @@ assert.equal(await page.locator('#g-vendas .vtab').count(),1,'Deve existir uma s
 assert.equal(await tab.getAttribute('data-est-week'),'2026-10-29');
 const text=await tab.innerText();
 assert(text.includes('Estimativas')&&text.includes('29/10'));
-assert(text.includes('Vendas Semana')&&text.includes('22/10'));
+assert(text.includes('Vendas Semana')&&text.includes('29/10'));
+assert(text.includes('Estimativas'));
+assert((await tab.locator('[data-est="trigo-comb"]').innerText())==='300-500');
 for(const [com,range] of [['trigo','300-500'],['milho','800-1400'],['soja','950-2200'],['farelo','200-350'],['oleo','0-10']]){
  const cell=tab.locator('[data-est="'+com+'-comb"]');
  assert.equal(await cell.innerText(),range,com+' deve estar na tabela original');
 }
-assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-22');
-assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-22'].soja.cy),2576.4);
-assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29']),undefined);
+assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].soja.cy),1456.12);
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].trigo.nc),19.2);
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].farelo.nc),0.284);
+assert.equal(await page.evaluate(()=>E.deep.nar.find(r=>r[0]==='2026-10-29')[3]),null);
+assert.equal(await page.evaluate(()=>E.dados.soja.s.MUNDO.at(-1)[3]+E.dados.soja.s.MUNDO.at(-1)[4]),30233.822);
+assert.equal(await page.evaluate(()=>E.dados.milho.s.MUNDO.at(-1)[3]+E.dados.milho.s.MUNDO.at(-1)[4]),24791.199);
+assert.equal(await page.evaluate(()=>E.dados.trigo.s.MUNDO.at(-1)[3]+E.dados.trigo.s.MUNDO.at(-1)[4]),12056.591);
+assert.equal(await page.evaluate(()=>E.dados.farelo.s.MUNDO.at(-1)[3]+E.dados.farelo.s.MUNDO.at(-1)[4]),6451.144);
+assert.equal(await page.evaluate(()=>E.dados.oleo.s.MUNDO.at(-1)[3]+E.dados.oleo.s.MUNDO.at(-1)[4]),37.966);
 const officialComment=await page.locator('[data-card="vendtxt|rep"] .vend-txt').innerText();
-assert(officialComment.includes('2.576'),'Comentário deve permanecer sobre o último realizado');
-assert(!officialComment.includes('950-2.200'),'Comentário não deve cruzar expectativas 29/10 com realizado 22/10');
+assert(officialComment.includes('1.456'),'Comentário deve tratar o realizado 29/10');
+assert(officialComment.includes('950-2.200'),'Comentário deve comparar o realizado 29/10 com seu consenso original');
 await page.locator('#topmenu button[data-go="scr-opcoes"]').click();
 await page.locator('#op-save').click();
 await page.waitForTimeout(2500);

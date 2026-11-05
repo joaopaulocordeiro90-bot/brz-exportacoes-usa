@@ -125,12 +125,13 @@
     "vendas_estimativas": "E.deep.vendEst[<data ISO>] aceita cy:[min,max], nc:[min,max] e comb:[min,max] por commodity. __combined:true continua válido quando TODAS as commodities vêm apenas com faixa total. O modo misto permite split em algumas linhas e comb em outras; comb ocupa Corrente/Total* e Nova fica em travessão. A tabela usa rótulos semânticos Corrente/Nova porque trigo, soja/milho e farelo/óleo viram o MY em datas diferentes. O comentário compara corrente+nova contra comb. As células seguem contenteditable e _vendRestore preserva edições. Nunca inventar split por safra."
   },
   "last_build": {
-    "id": "e95",
-    "data": "2026-11-04",
+    "id": "e96",
+    "data": "2026-11-05",
     "hash_prefix": "sha256[:16] informado na entrega",
-    "resumo": "Tela inicial: cartão Óleo de soja com a foto enviada pelo João; todos os 7 cartões agora com foto. Dados, motor e interface iguais ao e94."
+    "resumo": "Atualização semanal CWR XLSX 29/10/2026: cinco commodities, snapshots por países, vendas oficiais, embarques, commitment e comparativo com consenso já salvo. Gráficos dinâmicos sem alterações e preservação de personalizações."
   },
   "build_log": [
+    "e96 (05Nov): Country Detail XLSX oficial da semana 29/10, precisão 0,001 mil t; cinco commodities, 64 séries de destino/MUNDO, net sales por MY, shipments, acumulado, outstanding, commitment, China e percentis atualizados. Expectativas preexistentes preservadas na mesma tabela. Sem alterar motor gráfico, CSS ou infraestrutura Supabase.",
     "e95 (04Nov): cartão Óleo de soja da tela inicial passou a usar a foto enviada pelo João (garrafa de óleo, tigela e grãos sobre madeira), 612×408 px, JPEG embutido; saiu a classe gen e a arte SVG gerada no e88. Os 7 cartões da tela inicial agora usam foto.",
     "e94 (04Nov): cartão Farelo de soja da tela inicial passou a usar a foto enviada pelo João (farelo em pilha, saco e pá de madeira), redimensionada para 1280 px, JPEG embutido em data URL; saiu a classe gen e a arte SVG gerada no e88. Os demais cartões da tela inicial seguem iguais.",
     "e93 (04Nov): o PDF do USDA para 01/06/2023 tem tabelas de 25/05 (defeito na origem; a lista de relatórios de 2023 não oferece CWR Country Detail). Com aprovação do João, 01/06/2023 foi preenchida pela coluna YR AGO do relatório U.S. Export Sales de 30/05/2024 (outstanding e accumulated do ano anterior). Validação: o TOTAL KNOWN & UNKNOWN da coluna YR AGO bate com o Mundo da base em 01/06/2023 nas quatro commodities (óleo 49,3 contra 49,2 por arredondamento); os 42 destinos ficam entre 25/05 e 08/06 no embarcado acumulado; a semana corrente de 30/05/2024 bate com a base com diferença zero (54 pares). Óleo China, Índia, Guatemala, Argélia e Marrocos não constam do relatório nessa semana (sem venda nem embarque) e seguem null. Safra seguinte por destino em 01/06/2023 = null, porque a coluna YR AGO não traz o MY seguinte.",
@@ -193,7 +194,7 @@
     "[LAYOUT] e68 restaurou grupos por safra; se consenso combinado se repetir, preservá-lo como faixa conjunta mesmo com colunas MY explícitas. NÃO dividir sem fonte.",
     "[CONSENSO 27/28] Verificar faixas desagregadas ao receber fonte específica. Em 01/10/2026 só há faixa combinada confirmada, por isso n/d na coluna da safra seguinte. Não substituir por zero nem por range conjectural."
   ],
-  "latest_build": "e95 · 04Nov",
+  "latest_build": "e96 · 05Nov",
   "pending_2026_10_22": "CONCLUÍDO: Weekly Highlights de 22/10 recebido e switched Unknown→China=255 kt validado. Weekly Highlights 15/10 segue pendente.",
   "padrao_brz_safra": {
     "modelo": "BRZ SAFRA s32 (04/11/2026)",
@@ -213,7 +214,7 @@
 <header class="topnav">
   <div class="brand"><b>BRZ</b><span>Exportações Americanas · USDA ESR</span></div>
   <nav class="topmenu" id="topmenu"><button data-go="scr-menu" class="active">Inicial</button><button data-go="scr-soja" class="">Soja</button><button data-go="scr-farelo">Farelo de soja</button><button data-go="scr-oleo">Óleo de soja</button><button data-go="scr-milho">Milho</button><button data-go="scr-trigo">Trigo</button><button data-go="scr-vendas">Vendas Semanais</button><button data-go="scr-base">Base</button><button data-go="scr-opcoes" class="">Opções</button></nav>
-  <span class="hint" id="dt">dados até 22/out/2026 · release 29/10 · e95 · 04Nov</span>
+  <span class="hint" id="dt">dados até 29/out/2026 · release 05/11 · e96 · 05Nov</span>
 <button id="gear" title="Ativar/desativar modo edição" class="">⚙ Edição</button>
   <div class="lang-switch" id="lang-switch" role="group" aria-label="Idioma">
     <button type="button" class="active" data-lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil)" aria-pressed="true">
@@ -351,6 +352,7 @@
 <script id="eua-data-e86" src="data/patches/eua-data-e86.js"></script>
 <script id="eua-data-e87" src="data/patches/eua-data-e87.js"></script>
 <script id="eua-estimates-2026-10-29" src="data/patches/eua-estimates-2026-10-29.js"></script>
+<script id="eua-data-e96" src="data/patches/eua-data-e96.js"></script>
 <script id="brz-dyn-native" src="js/charts/dyn-native.js"></script>
 <script id="brz-fit" src="js/charts/fit.js"></script>
 <script src="js/core/app.js"></script><script src="js/core/export-adapter.js"></script>

@@ -1,4 +1,4 @@
-/* BRZ EUA — regression: e95→e96, zero writes to the real Supabase. */
+/* BRZ EUA — regression: e96→e97, zero writes to the real Supabase. */
 import {chromium} from "playwright";
 import assert from "node:assert/strict";
 const ENDPOINT="https://ckamifxyfmdjcomldsdb.supabase.co/functions/v1/brz-eua-gateway";
@@ -42,14 +42,14 @@ const original=await page.evaluate(()=>{
  saveState();
  return {build:BUILD,data:E.meta.atual,cardCount:Object.keys(window.__SAVED__.cards).length};
 });
-assert.equal(original.build,"e95 · 04Nov");
+assert.equal(original.build,"e96 · 05Nov");
 await page.waitForTimeout(2200);
 assert(saveCount>=1,"e95 save not synchronized");
 const oldState=sections.display_state.payload;
 assert(oldState.cards["netsafra|soja"].html.includes("VALOR ANTIGO 100"));
 const sentinel="__qa_unopened_card|soja";
 const pendingCard={html:'<div class="qa-pending">SNAPSHOT DE OUTRA ABA</div>',style:"",
-  sourceBuild:"e95 · 04Nov",sourceDataAtual:original.data};
+  sourceBuild:"e96 · 05Nov",sourceDataAtual:original.data};
 oldState.cards[sentinel]=pendingCard;
 await page.evaluate(({sentinel,pendingCard})=>{
  const stored=JSON.parse(localStorage.getItem("brz_eua_state"));
@@ -61,8 +61,8 @@ assert(totalKeys>1,"expected multiple cards");
 await page.route("**/js/core/app.js",async route=>{
  const res=await route.fetch();
  let source=await res.text();
- assert(source.includes("const BUILD='e95 · 04Nov';"));
- source=source.replace("const BUILD='e95 · 04Nov';","const BUILD='e96 · 12Nov';");
+ assert(source.includes("const BUILD='e96 · 05Nov';"));
+ source=source.replace("const BUILD='e96 · 05Nov';","const BUILD='e97 · 12Nov';");
  source="E.meta.atual='2026-11-05';\n"+source;
  servedNewBuild=true;
  await route.fulfill({response:res,body:source});
@@ -75,10 +75,10 @@ const before=await page.evaluate(()=>({
  card:window.__SAVED__?.cards["netsafra|soja"],
  count:Object.keys(window.__SAVED__?.cards||{}).length
 }));
-assert.equal(before.build,"e96 · 12Nov");
+assert.equal(before.build,"e97 · 12Nov");
 assert.equal(before.data,"2026-11-05");
-assert.equal(before.from.build,"e95 · 04Nov");
-assert.equal(before.card.sourceBuild,"e95 · 04Nov");
+assert.equal(before.from.build,"e96 · 05Nov");
+assert.equal(before.card.sourceBuild,"e96 · 05Nov");
 await page.evaluate(()=>show("scr-soja"));
 const next=await page.evaluate(()=>{
  const card=document.querySelector('[data-card="netsafra|soja"]');
@@ -95,12 +95,12 @@ assert.equal(next.sub,"Subtítulo editado");
 assert.equal(next.font,"22px");
 assert(next.svg);
 assert.equal(next.oldSvgMarker,false,"Old USDA SVG copied into new build");
-assert.equal(next.updatedBuild,"e96 · 12Nov");
+assert.equal(next.updatedBuild,"e97 · 12Nov");
 assert.equal(next.updatedData,"2026-11-05");
 await page.evaluate(()=>saveState());
 const kept=await page.evaluate(sentinel=>({
  count:Object.keys(window.__SAVED__.cards).length,
- pending:Object.values(window.__SAVED__.cards).filter(s=>s.sourceBuild!=="e96 · 12Nov").length,
+ pending:Object.values(window.__SAVED__.cards).filter(s=>s.sourceBuild!=="e97 · 12Nov").length,
  pendingKept:window.__SAVED__.cards[sentinel]?.html?.includes("SNAPSHOT DE OUTRA ABA")||false
 }),sentinel);
 assert(kept.count>=totalKeys,"Unrendered cards lost on save");
