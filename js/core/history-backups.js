@@ -205,7 +205,7 @@ async function exportEncrypted(){
    const encrypted=await encryptSnapshot({format:ISO,created_at,sections},pass);
    const test=await decryptSnapshot(encrypted,pass);
    if(!test.sections||Object.keys(test.sections).length!==2)throw new Error("Falha na autoverificação do arquivo.");
-   saveFile(encrypted,"BRZ_Safras_backup_"+created_at.slice(0,10)+".json");
+   saveFile(encrypted,"BRZ_Exportacoes_USA_backup_"+created_at.slice(0,10)+".json");
    inform("Cópia criptografada preparada e download iniciado. Confirme que o arquivo foi salvo fora do Supabase.");
    clearSecrets();
  }catch(e){inform(e.message||"Falha ao gerar o backup.",true);}
@@ -221,7 +221,7 @@ async function importEncrypted(){
    if(!confirm("Backup de "+dateFmt(snapshot.created_at)+".\n\nA importação substituirá as duas áreas editáveis atuais por esses valores. O histórico anterior será preservado.\n\nDeseja continuar?")){
      inform("Importação cancelada. Nada foi alterado.");return;
    }
-   if(prompt("Para confirmar a substituição das TRÊS áreas, digite IMPORTAR:")!=="IMPORTAR"){
+   if(prompt("Para confirmar a substituição das DUAS áreas, digite IMPORTAR:")!=="IMPORTAR"){
      inform("Importação cancelada. Nada foi alterado.");return;
    }
    inform("Importando com controle transacional...");
