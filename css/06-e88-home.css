@@ -1,0 +1,5 @@
+
+/* BRZ EUA e88 · tela inicial no padrão BRZ SAFRA */
+.pgrid .newscard.wide{grid-column:1/-1;height:260px}
+.newscard.gen .ov{background:linear-gradient(180deg,rgba(15,38,56,0) 35%,rgba(15,38,56,.78))}
+@media(max-width:760px){.pgrid .newscard.wide{height:220px}}
