@@ -128,6 +128,11 @@
    "path": "data/patches/eua-data-e87.js"
   },
   {
+   "open_mod": "<script id=\"eua-estimates-2026-10-29\" src=\"data/patches/eua-estimates-2026-10-29.js\">",
+   "open": "<script id=\"eua-estimates-2026-10-29\">",
+   "path": "data/patches/eua-estimates-2026-10-29.js"
+  },
+  {
    "open_mod": "<script id=\"brz-dyn-native\" src=\"js/charts/dyn-native.js\">",
    "open": "<script id=\"brz-dyn-native\">",
    "path": "js/charts/dyn-native.js"
