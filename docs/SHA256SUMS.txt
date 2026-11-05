@@ -41,7 +41,7 @@ c387f0b1dee8861089394e97f207c5abfba52753ea6bef64260a24f570df17dd  ./index.html
 7290ba9cabe38828757812f6d8f33d98a1f2c8d874a49b30aae76a0639fec5bc  ./js/charts/dyn-native.js
 1fa8009ba31a00e34d5e18bfa2d02a3b56d760d530ed296ba719ebe0c7aa4e92  ./js/charts/fit.js
 01960aa34fffd68fe1401de3228d2a83dc2c1c72bab685650ba0d8d52100f5e5  ./js/charts/q-zoom.js
-37712ec0ea91565b7513ecea53a4aaf1932504779db28f7dbd322fc95db7ae71  ./js/core/app.js
+992d01c338c702476fcd2a8dc63f21c7eb5226f1bfe2032a740bc554f7b99808  ./js/core/app.js
 71ec418d4ad3c9de8ef53809b12b25a40fcde74eca7554edcdd88f594d08b4a3  ./js/core/export-adapter.js
 5ed408904fe9aba90f913f9444109f3d09079cd0da7e2ebe9d6ac053580c985c  ./js/core/i18n.js
 7c033a7cacd6b0ffad7bdc53462f133b0a11e4ecf36be94dc1ae88593cb2472f  ./js/modules/base-export.js
