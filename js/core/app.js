@@ -2226,6 +2226,9 @@ function applyCardRebase(el,sv,c){
     const value=(t.textContent||'').trim(),style=oldLabels.get(value);
     if(style)t.setAttribute('style',style);
   });
+  /* Reaplicar após _draw(), que pode executar typoApply e redefinir fontes. */
+  transferText(title,freshTitle,sv.baseTitle);
+  transferText(subtitle,freshSubtitle,sv.baseSubtitle);
   return el;
 }
 function buildCard(com,c){
