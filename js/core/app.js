@@ -2608,7 +2608,12 @@ function buildVendTabela(){
   const dref=_vendNet('soja').data;
   const dd=dref?dref.split('-'):null;
   const dtxt=dd?dd[2]+'/'+dd[1]+'/'+dd[0].slice(2):'';
-  const EST=(E.deep&&E.deep.vendEst)?E.deep.vendEst[dref]:null;
+  const store=(E.deep&&E.deep.vendEst)||{};
+  /* Expectativas podem ser recebidas antes dos realizados da nova semana.
+     Exibir na tabela original, mantendo as vendas oficiais com sua data. */
+  const estWeek=Object.keys(store).filter(d=>d>=dref).sort().pop()||dref;
+  const EST=store[estWeek]||null, pendingEst=estWeek>dref;
+  el.dataset.estWeek=estWeek;
   const combinedAll=!!(EST&&EST.__combined);
   const combinedAny=!!(EST&&(combinedAll||VEND_ORD.some(c2=>EST[c2]&&EST[c2].comb)));
   /* As colunas conservam duas safras explícitas. Para períodos com calendários
@@ -2650,7 +2655,7 @@ function buildVendTabela(){
       +'<td class="arw">'+seta+'</td><td class="ma etext">'+f(v.ma4)+'</td>'
       +'</tr>';
   });
-  const note=(combinedAny?'<span>'+(['2026-10-15','2026-10-22'].includes(dref)?'Estimativas Dow Jones: faixa combinada 26/27 + 27/28 para as cinco commodities, sem divisão publicada por MY; 27/28 = n/d.':'Trigo e óleo de soja: faixas divulgadas sem divisão por MY, exibidas sob 26/27 por alinhamento; 27/28 = n/d.')+'</span>':'')
+  const note=(combinedAny?'<span>'+(pendingEst?'Expectativas para a semana de '+estWeek.slice(8,10)+'/'+estWeek.slice(5,7)+'/'+estWeek.slice(2,4)+' ainda sem resultado oficial. Os realizados exibidos correspondem à semana de '+dtxt+'. Faixas combinadas entre MY, sem divisão publicada por safra.':['2026-10-15','2026-10-22'].includes(dref)?'Estimativas Dow Jones: faixa combinada 26/27 + 27/28 para as cinco commodities, sem divisão publicada por MY; 27/28 = n/d.':'Trigo e óleo de soja: faixas divulgadas sem divisão por MY, exibidas sob 26/27 por alinhamento; 27/28 = n/d.')+'</span>':'')
     +(dref==='2026-10-08'?'<span>Farelo: faixa pré-relatório publicada como 200–60 mil t, com erro no intervalo; expectativa pendente de confirmação.</span>':'')
     +(priorMY?'<span>Semana anterior de farelo e óleo: safra velha MY 25/26, safra nova MY 26/27. Os anos efetivos est\u00e3o indicados abaixo dos volumes.</span>':'')
     +(mixedMY?'<span>Os anos comerciais variam conforme a commodity; os valores estão identificados por MY.</span>':'');
@@ -2659,7 +2664,7 @@ function buildVendTabela(){
     +'<div class="p-card-s etext">Em mil t \u00b7 semana at\u00e9 '+dtxt+' \u00b7 net sales = \u0394 commit \u00b7 vendas novas = \u0394 book \u00b7 seta: semana atual vs m\u00e9dia 4 sem</div>'
     +'</div><div class="tools"><button class="mini rst" title="Restaurar (limpa estimativas)">\u21ba</button><button class="mini png" title="Foto">\ud83d\udcf7</button></div></div>'
     +'<table class="vtab"><thead>'
-    +'<tr><th class="grp" rowspan="2">Volume em<br>1000 tons</th><th class="grp" colspan="2">Estimativas</th><th class="grp" colspan="2">Vendas Semana<br>atual</th><th class="grp" colspan="2">Vendas Semana<br>anterior</th><th class="grp" colspan="2">&lt;M\u00e9dia 4<br>semanas&gt;</th></tr>'
+    +'<tr><th class="grp" rowspan="2">Volume em<br>1000 tons</th><th class="grp" colspan="2">Estimativas'+(pendingEst?'<br>'+estWeek.slice(8,10)+'/'+estWeek.slice(5,7):'')+'</th><th class="grp" colspan="2">Vendas Semana<br>atual'+(pendingEst?' ('+dref.slice(8,10)+'/'+dref.slice(5,7)+')':'')+'</th><th class="grp" colspan="2">Vendas Semana<br>anterior</th><th class="grp" colspan="2">&lt;M\u00e9dia 4<br>semanas&gt;</th></tr>'
     +'<tr><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th></th><th></th></tr>'
     +'</thead><tbody>'+rowsHtml+'</tbody></table>'
     +(note?'<div class="vend-note">'+note+'</div>':'');
@@ -2686,7 +2691,22 @@ function buildVendTexto(){
     +'<div class="vend-txt etext" contenteditable="true" spellcheck="false" data-week="'+dtxt+'" style="border-top:none;margin-top:2px;padding-top:0;"></div>';
   el._genTxt=()=>{const tx=el.querySelector('.vend-txt');
     const tab=document.querySelector('[data-card="vendsem|rep"]');
-    if(tx){const en2=document.documentElement.lang==='en'&&window.gerarVendTextoEN;tx.innerHTML=en2?gerarVendTextoEN(tab):gerarVendTexto(tab);tx.setAttribute('data-noi18n','');tx.setAttribute('data-auto-sig',_vendSig(tx.innerHTML));}};
+    let reportTab=tab;
+    /* O texto do relatório realizado NÃO pode comparar 22/10 com expectativas
+       futuras de 29/10; usar consenso da própria semana só nesta geração. */
+    const actualWeek=_vendNet('soja').data;
+    if(tab&&tab.dataset.estWeek&&tab.dataset.estWeek!==actualWeek){
+      reportTab=tab.cloneNode(true);
+      const historic=((E.deep||{}).vendEst||{})[actualWeek]||{};
+      VEND_ORD.forEach(com=>{
+        for(const k of ['cy','nc','comb']){
+          const cell=reportTab.querySelector('[data-est="'+com+'-'+k+'"]');
+          const range=historic[com]&&historic[com][k];
+          if(cell)cell.textContent=range?range.join('-'):'—';
+        }
+      });
+    }
+    if(tx){const en2=document.documentElement.lang==='en'&&window.gerarVendTextoEN;tx.innerHTML=en2?gerarVendTextoEN(reportTab):gerarVendTexto(reportTab);tx.setAttribute('data-noi18n','');tx.setAttribute('data-auto-sig',_vendSig(tx.innerHTML));}};
   el._genTxt();
   const btr=el.querySelector('.mini.txr');
   if(btr)btr.onclick=()=>el._genTxt();
@@ -2702,7 +2722,13 @@ function _vendSig(s){let h=5381;s=String(s||'');for(let i=0;i<s.length;i++)h=((h
 function _vendRestore(novo,keepHtml,selT){
   if(!keepHtml)return;
   const keep=document.createElement('div');keep.innerHTML=keepHtml;
-  novo.querySelectorAll('[data-est]').forEach(td=>{
+  /* Não restaurar faixas salvas para uma semana diferente. Os demais títulos e
+     ajustes manuais continuam elegíveis à restauração. */
+  const oldEstWeek=keep.firstElementChild&&keep.firstElementChild.dataset.estWeek;
+  const currentEstWeek=novo.dataset.estWeek;
+  const canRestoreEstimate=!currentEstWeek
+    ||(oldEstWeek?oldEstWeek===currentEstWeek:currentEstWeek===_vendNet('soja').data);
+  if(canRestoreEstimate)novo.querySelectorAll('[data-est]').forEach(td=>{
     const old=keep.querySelector('[data-est="'+td.dataset.est+'"]');
     if(old&&old.textContent.trim())td.textContent=old.textContent.trim();
   });
@@ -2712,47 +2738,6 @@ function _vendRestore(novo,keepHtml,selT){
   });
   const txO=keep.querySelector('.vend-txt'),txN=novo.querySelector('.vend-txt');
   if(txO&&txN&&txO.getAttribute('data-week')===txN.getAttribute('data-week')&&txO.innerHTML.trim()){txN.innerHTML=txO.innerHTML;novo.dataset.txtKept='1';['data-auto-sig','data-noi18n'].forEach(a=>{if(txO.hasAttribute(a))txN.setAttribute(a,txO.getAttribute(a));else txN.removeAttribute(a);});}
-}
-/* Pré-relatório: expectativa recebida antes do realizado oficial, sem deslocar a
-   semana do USDA nem modificar comentários, gráficos ou indicadores históricos. */
-function buildVendPreReport(){
-  const D=E.deep||{}, est=D.vendEst||{}, actual=D.vendActual||{};
-  const latest=_vendNet('soja').data;
-  const pending=Object.keys(est).filter(d=>d>latest&&!actual[d]&&est[d].__combined).sort().pop();
-  if(!pending)return null;
-  const prev=Object.keys(actual).filter(d=>d<pending).sort().slice(-2).reverse();
-  const fmtDate=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4):'—';
-  const fnum=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
-  const vComb=(day,com)=>{
-    const r=actual[day]&&actual[day][com];
-    return !r||(!Number.isFinite(r.cy)&&!Number.isFinite(r.nc))?'—':fnum((Number(r.cy)||0)+(Number(r.nc)||0));
-  };
-  const fmtRange=com=>{
-    const r=est[pending][com]&&est[pending][com].comb;
-    return r&&r.length===2?fnum(r[0])+'–'+fnum(r[1]):'—';
-  };
-  const rows=VEND_ORD.map(com=>'<tr><td class="cm etext">'+E.nome[com]+'</td>'
-    +'<td class="est etext vend-est-total">'+fmtRange(com)+'</td>'
-    +prev.map(day=>'<td class="etext">'+vComb(day,com)+'</td>').join('')
-    +'</tr>').join('');
-  const el=document.createElement('div');
-  el.id='brz-vendas-pre-report';
-  el.className='p-card vend-wrap';
-  el.style.gridColumn='1 / -1';
-  const src=D.vendEstSources&&D.vendEstSources[pending];
-  const release=src&&src.release?' · divulgação '+fmtDate(src.release):'';
-  el.innerHTML='<div class="p-card-h"><div>'
-    +'<div class="p-card-t">Expectativas para o próximo relatório USDA/FAS</div>'
-    +'<div class="p-card-s">Em mil t · semana até '+fmtDate(pending)+release+' · vendas líquidas, todos os MY combinados</div>'
-    +'</div></div>'
-    +'<table class="vtab"><thead><tr><th>Commodity</th><th>Expectativa '+fmtDate(pending)+'</th>'
-    +prev.map(day=>'<th>Realizado '+fmtDate(day)+'</th>').join('')
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="vend-note"><span>Estimativas de analistas (pré-USDA), ainda sem realizado para '+fmtDate(pending)+'. Os resultados oficiais mais recentes permanecem na tabela abaixo; nenhuma divisão por safra foi estimada.</span></div>';
-  if(window.typoApply)typoApply(el);
-  const t=el.querySelector('.p-card-t'),s=el.querySelector('.p-card-s');
-  if(t)t.style.fontSize='18px';if(s)s.style.fontSize='13px';
-  return el;
 }
 function renderVendas(){
   const g=document.getElementById('g-vendas');
@@ -2770,8 +2755,6 @@ function renderVendas(){
   const pT=g.querySelector('[data-card="vendsem|rep"]'),pX=g.querySelector('[data-card="vendtxt|rep"]');
   if(pT)pT.remove(); if(pX)pX.remove();
   g.appendChild(tab); g.appendChild(txt);
-  const prior=g.querySelector('#brz-vendas-pre-report');if(prior)prior.remove();
-  const upcoming=buildVendPreReport();if(upcoming)g.prepend(upcoming);
   /* só agora a tabela existe no DOM: regenerar para que gerarVendTexto enxergue
      as células de estimativa. Não regenera se houver lapidação preservada. */
   const txEl=txt.querySelector('.vend-txt');
