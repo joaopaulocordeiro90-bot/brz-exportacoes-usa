@@ -7,8 +7,34 @@
 <link rel="stylesheet" href="css/04-s31-zoom.css">
 <link rel="stylesheet" href="css/05-e88-mobile.css">
 <link rel="stylesheet" href="css/06-e88-home.css">
+<link rel="stylesheet" href="css/brz-gate.css" data-brz-cloud="1">
 </head>
 <body class="">
+<div data-brz-cloud="1" id="brz-access-gate" role="dialog" aria-modal="true" aria-labelledby="brz-gate-heading">
+  <div class="brz-gate-header">
+    <div class="brz-gate-brand"><span class="brz-gate-logo">BRZ</span><span class="brz-gate-separator"></span><span class="brz-gate-product">Exportações USA<small>USDA · Export Sales</small></span></div>
+    <span class="brz-gate-brandtag">AGRINVEST INTELIGÊNCIA</span>
+  </div>
+  <section class="brz-gate-card">
+    <div class="brz-gate-accent"></div>
+    <div class="brz-gate-inner">
+      <p class="brz-gate-eyebrow">Ambiente BRZ · Exportações USA</p>
+      <h1 class="brz-gate-title" id="brz-gate-heading">Acesso ao painel</h1>
+      <p class="brz-gate-caption">Informe sua senha para acessar o BRZ Exportações USA.</p>
+      <form id="brz-gate-form" autocomplete="off">
+        <label for="brz-gate-password">Senha de acesso</label>
+        <div class="brz-gate-input">
+          <input id="brz-gate-password" name="password" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Digite sua senha" required autofocus>
+          <button type="button" class="brz-gate-toggle" id="brz-gate-show" aria-label="Exibir senha">Mostrar</button>
+        </div>
+        <p id="brz-gate-error" aria-live="polite"></p>
+        <button class="brz-gate-submit" type="submit">Entrar no BRZ Exportações USA</button>
+      </form>
+    </div>
+    <div class="brz-gate-footer">AGRINVEST COMMODITIES · BRASIL</div>
+  </section>
+</div>
+<script src="js/core/gate-handler.js" data-brz-cloud="1"></script>
 <script type="application/json" id="__HISTORY__">{
   "_READ_ME_FIRST": "Você é uma IA que acabou de receber este arquivo HTML. Este bloco é o handoff canônico: leia-o INTEIRO antes de responder, e trate-o como verdade sobre o app. NÃO peça ao usuário para reexplicar a lógica — ela está aqui. NÃO reexecute análises já feitas. Este bloco é invisível na tela (type=application/json, não executa) e existe só para você. REGRA CRÍTICA: antes de terminar QUALQUER edição no arquivo, atualize este bloco — bump last_build, prepend uma linha em build_log, e ajuste pending. Se você não atualizar, o próximo handoff estará quebrado e o usuário terá que reexplicar tudo, que é exatamente o que este bloco existe para evitar.",
   "app": {
@@ -336,4 +362,6 @@
 <script id="brz-i18n" src="js/core/i18n.js"></script>
 
 
+<script src="js/core/cloud-sync.js" data-brz-cloud="1"></script>
+<script defer src="js/core/history-backups.js" data-brz-cloud="1"></script>
 </body></html>
