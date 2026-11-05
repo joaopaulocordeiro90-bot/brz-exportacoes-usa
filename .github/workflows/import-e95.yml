@@ -2,8 +2,16 @@ name: Importar BRZ E95 e publicar Pages
 
 on:
   push:
+    branches: [main]
     paths:
       - BRZ_EXPORTACOES_USA_E95_GITHUB_READY.zip
+      - index.html
+      - 'css/**'
+      - 'js/**'
+      - 'data/**'
+      - 'assets/**'
+      - 'docs/**'
+      - '.github/workflows/import-e95.yml'
   workflow_dispatch:
 
 permissions:
