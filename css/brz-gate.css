@@ -1,0 +1,29 @@
+
+html:not(.brz-access-granted) body > :not(#brz-access-gate){visibility:hidden!important}
+#brz-access-gate{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:100px 18px 65px;background:#F3F6F9;font-family:'Arial Nova Cond','Arial Narrow',Arial,sans-serif;color:#1E3448;box-sizing:border-box}
+#brz-access-gate,#brz-access-gate *{box-sizing:border-box}
+#brz-access-gate[hidden]{display:none!important}
+#brz-access-gate .brz-gate-header{position:absolute;inset:0 0 auto;height:66px;padding:0 clamp(18px,4vw,58px);background:white;border-bottom:1px solid #DCE5ED;display:flex;align-items:center;justify-content:space-between;gap:14px}
+#brz-access-gate .brz-gate-brand{display:flex;align-items:center;gap:12px}
+#brz-access-gate .brz-gate-logo{font:900 30px/1 Arial,sans-serif;color:#1A3A5C;letter-spacing:-2px}
+#brz-access-gate .brz-gate-separator{height:30px;width:1px;background:#CAD6E0}
+#brz-access-gate .brz-gate-product{font-size:12px;color:#1A3A5C;font-weight:800}
+#brz-access-gate .brz-gate-product small{display:block;color:#64748B;font-size:11px;font-weight:400;margin-top:3px}
+#brz-access-gate .brz-gate-brandtag{color:#64748B;font-size:11px;font-weight:700;letter-spacing:1px}
+#brz-access-gate .brz-gate-card{background:white;width:min(100%,440px);border:1px solid #DCE5ED;border-radius:10px;box-shadow:0 12px 34px rgba(18,41,63,.08);overflow:hidden}
+#brz-access-gate .brz-gate-accent{height:4px;background:linear-gradient(90deg,#1A3A5C 0 70%,#0D9488 70% 92%,#B5963E 92%)}
+#brz-access-gate .brz-gate-inner{padding:36px clamp(24px,5vw,40px) 30px}
+#brz-access-gate .brz-gate-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#0D9488;font-weight:800;margin:0 0 11px}
+#brz-access-gate .brz-gate-title{font-size:24px;line-height:1.2;color:#12293F;letter-spacing:-.45px;margin:0 0 10px}
+#brz-access-gate .brz-gate-caption{font-size:12.5px;line-height:1.5;color:#526778;margin:0 0 28px}
+#brz-access-gate label{display:block;font-size:12px;font-weight:800;color:#12293F;margin:0 0 9px}
+#brz-access-gate .brz-gate-input{position:relative}
+#brz-access-gate input{display:block;width:100%;height:45px;border:1px solid #C9D6DF;border-radius:6px;padding:0 70px 0 13px;font:600 16px Arial,sans-serif;color:#12293F;letter-spacing:1px;background:white;outline:0}
+#brz-access-gate input:focus{border-color:#0D9488;box-shadow:0 0 0 3px rgba(13,148,136,.11)}
+#brz-access-gate .brz-gate-toggle{position:absolute;top:1px;right:1px;height:43px;width:69px;padding:0;border:none;background:none;color:#566D7F;font:700 11px Arial,sans-serif;cursor:pointer}
+#brz-access-gate .brz-gate-submit{width:100%;height:44px;margin-top:18px;border:0;border-radius:6px;background:#1A3A5C;color:white;font:800 12px Arial,sans-serif;cursor:pointer}
+#brz-access-gate .brz-gate-submit:hover{background:#24547C}
+#brz-access-gate .brz-gate-submit:disabled{opacity:.6;cursor:wait}
+#brz-gate-error{min-height:16px;margin:9px 0 0;color:#B42318;font-size:12px}
+#brz-access-gate .brz-gate-footer{border-top:1px solid #E8EEF2;padding:16px 25px;background:#FBFCFD;text-align:center;color:#64748B;font-size:10px}
+@media(max-width:520px){#brz-access-gate{padding-top:110px;align-items:flex-start}#brz-access-gate .brz-gate-header{height:61px;padding:0 16px}#brz-access-gate .brz-gate-brandtag{display:none}}
