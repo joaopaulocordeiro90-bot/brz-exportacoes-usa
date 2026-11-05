@@ -2663,7 +2663,7 @@ function buildVendTabela(){
     +'<div class="p-card-t etext">EUA: Relat\u00f3rio de Vendas e Embarques</div>'
     +'<div class="p-card-s etext">Em mil t \u00b7 semana at\u00e9 '+dtxt+' \u00b7 net sales = \u0394 commit \u00b7 vendas novas = \u0394 book \u00b7 seta: semana atual vs m\u00e9dia 4 sem</div>'
     +'</div><div class="tools"><button class="mini rst" title="Restaurar (limpa estimativas)">\u21ba</button><button class="mini png" title="Foto">\ud83d\udcf7</button></div></div>'
-    +'<table class="vtab"><thead>'
+    +'<table class="vtab" data-est-week="'+estWeek+'"><thead>'
     +'<tr><th class="grp" rowspan="2">Volume em<br>1000 tons</th><th class="grp" colspan="2">Estimativas'+(pendingEst?'<br>'+estWeek.slice(8,10)+'/'+estWeek.slice(5,7):'')+'</th><th class="grp" colspan="2">Vendas Semana<br>atual'+(pendingEst?' ('+dref.slice(8,10)+'/'+dref.slice(5,7)+')':'')+'</th><th class="grp" colspan="2">Vendas Semana<br>anterior</th><th class="grp" colspan="2">&lt;M\u00e9dia 4<br>semanas&gt;</th></tr>'
     +'<tr><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th>'+yearHeads[0]+'</th><th>'+yearHeads[1]+'</th><th></th><th></th></tr>'
     +'</thead><tbody>'+rowsHtml+'</tbody></table>'
@@ -2724,10 +2724,13 @@ function _vendRestore(novo,keepHtml,selT){
   const keep=document.createElement('div');keep.innerHTML=keepHtml;
   /* Não restaurar faixas salvas para uma semana diferente. Os demais títulos e
      ajustes manuais continuam elegíveis à restauração. */
-  const oldEstWeek=keep.firstElementChild&&keep.firstElementChild.dataset.estWeek;
+  /* Snapshots do Supabase/HTML guardam o INNERHTML do card, sem a data
+     do elemento externo. Portanto, só restaurar faixas se o snapshot tiver
+     marcador explícito da mesma semana. Snapshots antigos sem marcador
+     preservam títulos e estilos, mas NUNCA sobrescrevem consenso USDA. */
+  const oldEstWeek=keep.querySelector('table.vtab[data-est-week]')?.dataset.estWeek;
   const currentEstWeek=novo.dataset.estWeek;
-  const canRestoreEstimate=!currentEstWeek
-    ||(oldEstWeek?oldEstWeek===currentEstWeek:currentEstWeek===_vendNet('soja').data);
+  const canRestoreEstimate=!!(oldEstWeek&&currentEstWeek&&oldEstWeek===currentEstWeek);
   if(canRestoreEstimate)novo.querySelectorAll('[data-est]').forEach(td=>{
     const old=keep.querySelector('[data-est="'+td.dataset.est+'"]');
     if(old&&old.textContent.trim())td.textContent=old.textContent.trim();
