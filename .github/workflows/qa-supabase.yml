@@ -43,3 +43,11 @@ jobs:
               assert f in p.scripts
           print(f'OK: {len(p.scripts)} scripts, {len(p.css)} folhas CSS e autenticação.')
           PY
+      - name: Testar senha, sincronização e exportação autocontida no Chromium
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8000 >/tmp/brz-eua-http.log 2>&1 &
+          npm install --no-save playwright@1.56.1
+          npx playwright install chromium --with-deps
+          node tools/qa_cloud_smoke.mjs
