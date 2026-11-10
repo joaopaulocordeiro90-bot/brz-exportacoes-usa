@@ -138,6 +138,11 @@
    "path": "data/patches/eua-data-e96.js"
   },
   {
+   "open_mod": "<script id=\"eua-wasde-2026-11-10\" src=\"data/patches/eua-wasde-2026-11-10.js\">",
+   "open": "<script id=\"eua-wasde-2026-11-10\">",
+   "path": "data/patches/eua-wasde-2026-11-10.js"
+  },
+  {
    "open_mod": "<script id=\"brz-dyn-native\" src=\"js/charts/dyn-native.js\">",
    "open": "<script id=\"brz-dyn-native\">",
    "path": "js/charts/dyn-native.js"
