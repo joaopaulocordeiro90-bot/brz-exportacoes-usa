@@ -110,24 +110,40 @@ function wasdeSwap(el,com){
   if(window.typoApply)typoApply(el);
   if(window.BRZFIT)BRZFIT(el);
 }
+/* Meta válida na data de cada observação FAS; somente a ÚLTIMA semana da
+   safra corrente usa a meta mais recente se houve WASDE após o fechamento.
+   Assim o compromisso atual reflete o WASDE 10/11 sem reescrever
+   percentuais históricos de semanas anteriores. */
+function wasdeGoalAtObservation(com,obs){
+  const wmap=E.dados[com].wasde||[];
+  let goal=null;
+  for(const row of wmap){
+    if(row[0]<=obs[0])goal=row[1];
+    else break;
+  }
+  const cy=MYS(com).at(-1),latest=wkNow(com);
+  if(obs[1]===cy&&obs[2]===latest&&E.meta?.wasde_atual&&E.meta.wasde_atual>obs[0])
+    goal=wmap.length?wmap.at(-1)[1]:goal;
+  return goal;
+}
 function gWasde(com){
   const rows=S(com,'MUNDO'),wmap=E.dados[com].wasde;
   if(!wmap.length)return SW(`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="#888">sem projeção</text>`);
   if(WASDE_SZN[com]){
     const ys=MYS(com),cy=ys[ys.length-1];
     const lad=i=>LADDER[i+LADDER.length-ys.length]||NAVY;
-    const wAt=d=>{let v=wmap[0][1];for(const r of wmap){if(r[0]<=d)v=r[1];else break;}return v;};
+    const wAt=r=>wasdeGoalAtObservation(com,r);
     const a=0,b=115;
     let s=AX()+TY([0,25,50,75,100],a,b,v=>v+'%')+TXM(com);
     s+=`<line x1="${ML}" y1="${Y(100,a,b)}" x2="${W-MR}" y2="${Y(100,a,b)}" stroke="#666" stroke-dasharray="4 3"/>`;
     ys.forEach((y,i)=>{
-      const pts2=rows.filter(r=>r[1]===y).map(r=>({x:r[2],v:(r[3]+r[4])/wAt(r[0])*100}));
+      const pts2=rows.filter(r=>r[1]===y).map(r=>({x:r[2],v:(r[3]+r[4])/wAt(r)*100}));
       if(pts2.length<3)return;
       const ln=pts2.map(p=>X(p.x,1,53).toFixed(1)+','+Y(Math.min(p.v,b),a,b).toFixed(1)).join(' ');
       s+=`<polyline points="${ln}" fill="none" stroke="${lad(i)}" stroke-width="${y===cy?2.8:1.8}"/>`;
     });
     const cur=rows.filter(r=>r[1]===cy);
-    if(cur.length){const r0=cur[cur.length-1];const v0=(r0[3]+r0[4])/wAt(r0[0])*100;
+    if(cur.length){const r0=cur[cur.length-1];const v0=(r0[3]+r0[4])/wAt(r0)*100;
       s+=`<text x="${(X(r0[2],1,53)-4).toFixed(1)}" y="${(Y(Math.min(v0,b),a,b)-6).toFixed(1)}" font-size="9" font-weight="700" text-anchor="end" fill="#000">${f1(v0)}%</text>`;}
     const lx=W-MR-52;
     ys.forEach((y,i)=>{
@@ -136,10 +152,10 @@ function gWasde(com){
     });
     return SW(s);
   }
-  let wi=0,last=null; const pts=[];
+  const pts=[];
   rows.forEach(r=>{
-    while(wi<wmap.length&&wmap[wi][0]<=r[0]){last=wmap[wi][1];wi++;}
-    if(last)pts.push({x:new Date(r[0]).getTime(),v:(r[3]+r[4])/last*100});
+    const goal=wasdeGoalAtObservation(com,r);
+    if(goal>0)pts.push({x:new Date(r[0]).getTime(),v:(r[3]+r[4])/goal*100});
   });
   const xa=pts[0].x,xb=pts[pts.length-1].x,a=0,b=Math.max(115,Math.ceil(Math.max(...pts.map(p=>p.v))*1.08/25)*25);
   let s=AX()+TY([0,25,50,75,100,125,150,175,200,250,300].filter(v=>v<=b),a,b,v=>v+'%');
@@ -154,7 +170,7 @@ function gRitmo(com){
   const ys=MYS(com),cy=ys[ys.length-1];
   const wm=E.dados[com].wasde;
   if(!wm||!wm.length)return SW(`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="#888">sem meta WASDE</text>`);
-  const wAt=d=>{let v=wm[0][1];for(const r of wm){if(r[0]<=d)v=r[1];else break;}return v;};
+  const wAt=r=>wasdeGoalAtObservation(com,r);
   const finais={};ys.slice(0,-1).forEach(y=>{const rw=S(com,'MUNDO').filter(r=>r[1]===y);if(rw.length&&rw[rw.length-1][3]>0)finais[y]=rw[rw.length-1][3];});
   if(Object.keys(finais).length<2)return SW(`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="11" fill="#888">histórico insuficiente</text>`);
   const shareLoo=(w,ex)=>{let s2=0,n=0;Object.keys(finais).forEach(ky=>{const y=+ky;if(y===ex)return;
@@ -166,7 +182,7 @@ function gRitmo(com){
     const k=myLbl(y);if(HID(k))return;
     const rows=S(com,'MUNDO').filter(r=>r[1]===y);
     const pts=[];rows.forEach(r=>{const sh=shareLoo(r[2],y);if(sh==null)return;
-      pts.push({x:r[2],v:(r[3]-sh*wAt(r[0]))/1000});});
+      pts.push({x:r[2],v:(r[3]-sh*wAt(r))/1000});});
     if(pts.length>2)series.push({k,c:LADDER[i+LADDER.length-ys.length]||NAVY,w:y===cy?1.8:1.1,pts});
   });
   if(!HID(bookK)){
@@ -441,8 +457,7 @@ function commitPctCtx(com,wkSel){
     // Comparação exatamente na mesma semana: não imputar leituras ausentes.
     const r=rows.find(q=>q[1]===y&&q[2]===wk);
     if(!r)return null;
-    let alvo=null;
-    for(const w of wm){if(w[0]<=r[0]&&Number.isFinite(w[1])&&w[1]>0)alvo=w[1];else if(w[0]>r[0])break;}
+    const alvo=wasdeGoalAtObservation(com,r);
     if(!(alvo>0))return null;
     return {y,wk,data:r[0],commit:r[3]+r[4],alvo,v:100*(r[3]+r[4])/alvo,cur:y===cy};
   }).filter(Boolean);
