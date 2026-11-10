@@ -27,6 +27,62 @@ await page.locator('#brz-gate-form button[type="submit"]').click();
 await page.waitForFunction(()=>document.documentElement.classList.contains('brz-access-granted'));
 assert.equal(await gate.isVisible(),false);
 assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
+assert.equal(await page.evaluate(()=>E.meta.gerado),'2026-11-05');
+assert.equal(await page.evaluate(()=>E.meta.wasde_atual),'2026-11-10');
+assert.equal(await page.evaluate(()=>BUILD),'e98 · 10Nov');
+assert((await page.locator('#dt').innerText()).includes('WASDE 10/11/26'));
+const wasde=await page.evaluate(()=>{
+ const result={};
+ for(const com of ['soja','milho','trigo','farelo','oleo']){
+  const d=E.dados[com],old=d.wasde.find(r=>r[0]==='2026-10-09');
+  const now=d.wasde.find(r=>r[0]==='2026-11-10');
+  const actual=d.s.MUNDO.at(-1),cum=actual[3],comm=actual[3]+actual[4];
+  result[com]={latest:d.wasde.at(-1),old,now,
+    released:d.wasde.filter(x=>x[0]==='2026-11-10').length,
+    date:actual[0],week:actual[2],cum,comm,
+    curPct:commitPctCtx(com).atual.v,
+    goalNow:wasdeGoalAtObservation(com,actual),
+    goalBefore:wasdeGoalAtObservation(com,d.s.MUNDO.at(-2)),
+    nmyGoal:E.deep.nmy_wasde[com][2026]};
+ }
+ result.cur26=E.deep.cur26['9'];
+ result.trendSvg=gWasde('soja');
+ return result;
+});
+const expected={
+ soja:{old:46130.2725,goal:46810.66,week:9,accum:12020.552,comm:30233.822},
+ milho:{old:83823.96,goal:83188.93,week:9,accum:11126.29,comm:24791.199},
+ trigo:{old:20411.625,goal:20411.625,week:22,accum:7800.65,comm:12056.591},
+ farelo:{old:20593.0936,goal:20593.0936,week:5,accum:1326.939,comm:6451.144},
+ oleo:{old:181.4369,goal:181.4369,week:5,accum:8.513,comm:37.966}
+};
+const near=(a,b,msg)=>assert(Math.abs(a-b)<0.0005,msg+' '+a+' vs '+b);
+for(const [com,e] of Object.entries(expected)){
+ const d=wasde[com];
+ assert.equal(d.released,1,'duplicate WASDE '+com);
+ assert.equal(d.now[0],'2026-11-10');
+ assert.equal(d.latest[0],'2026-11-10');
+ assert.equal(d.date,'2026-10-29','latest FAS date '+com);
+ assert.equal(d.week,e.week);
+ near(d.old[1],e.old,'October preserved '+com);
+ near(d.now[1],e.goal,'Nov target '+com);
+ near(d.nmyGoal,e.goal,'next program reference '+com);
+ near(d.goalNow,e.goal,'current graph target '+com);
+ near(d.goalBefore,e.old,'historical graph target '+com);
+ near(d.cum,e.accum,'FAS shipped '+com);
+ near(d.comm,e.comm,'FAS commitment '+com);
+ near(d.curPct,e.comm/e.goal*100,'current commitment % '+com);
+}
+assert.equal(wasde.cur26,64.6,'percentile cached soy 2026/27');
+assert(wasde.trendSvg.includes('64,6%'),'historical WASDE chart latest point should show revised program %');
+// Não mudar metas retroativamente em observações históricas.
+const prior=await page.evaluate(()=>{
+ const r=E.dados.soja.s.MUNDO.find(x=>x[0]==='2026-10-22');
+ return {wasde:wasdeGoalAtObservation('soja',r),current:E.dados.soja.wasde.at(-1)[1]};
+});
+near(prior.wasde,46130.2725,'historic soybean 22Oct unchanged');
+assert.notEqual(prior.wasde,prior.current);
+
 assert.equal(await page.evaluate(()=>Object.keys(__SAVED__.cards).length),88);
 // Regressão: cards originalmente serializados em semana 7 da soja,
 // semana 21 do trigo e semana 4 do óleo devem renderizar a última semana oficial.
