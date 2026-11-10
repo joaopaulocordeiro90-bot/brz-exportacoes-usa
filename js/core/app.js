@@ -1995,7 +1995,7 @@ function baixar(el,tit,cwArg,chArg){
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
 }
 
-const BUILD='e97 · 05Nov';
+const BUILD='e98 · 10Nov';
 let LOGO_URL='';
 try{const _b64=null; }catch(e){}
 function _mkLogoUrl(){try{const b64=LOGO_HREF.split(',')[1];const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return URL.createObjectURL(new Blob([u8],{type:'image/png'}));}catch(e){return LOGO_HREF;}}
@@ -2896,7 +2896,8 @@ function show(id){
   const rel=E.meta&&E.meta.atual||'',gen=E.meta&&E.meta.gerado||'',cov=periodEndISO(rel),a=cov.split('-'),g=gen.split('-');
   const at=a.length===3?a[2]+'/'+MZ[+a[1]-1]+'/'+a[0]:'';
   const ge=g.length===3?g[2]+'/'+g[1]:'';
-  document.getElementById('dt').textContent='dados até '+at+' · release '+ge+' · '+BUILD;})();
+  const was=E.meta&&E.meta.wasde_atual?brDate(E.meta.wasde_atual,true):'';
+  document.getElementById('dt').textContent='dados até '+at+' · release '+ge+(was?' · WASDE '+was:'')+' · '+BUILD;})();
   const stateOk=s=>!!(s&&s.v>=2&&s.build===BUILD&&s.dataAtual===E.meta.atual);
   const stateUsable=s=>!!(s&&s.v>=2&&s.cards&&typeof s.cards==='object');
   try{const ls=localStorage.getItem('brz_eua_state');
