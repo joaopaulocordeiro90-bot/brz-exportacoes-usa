@@ -2011,7 +2011,7 @@ function baixar(el,tit,cwArg,chArg){
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
 }
 
-const BUILD='e99 · 11Nov';
+const BUILD='e100 · 11Nov';
 let LOGO_URL='';
 try{const _b64=null; }catch(e){}
 function _mkLogoUrl(){try{const b64=LOGO_HREF.split(',')[1];const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return URL.createObjectURL(new Blob([u8],{type:'image/png'}));}catch(e){return LOGO_HREF;}}
