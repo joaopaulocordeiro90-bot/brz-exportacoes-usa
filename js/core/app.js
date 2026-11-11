@@ -2256,7 +2256,15 @@ function buildCard(com,c){
     const key=c.id+'|'+com;
     if(c.id==='cnnoncommit')return window.BRZChinaNonChina.build(com,c,window.__SAVED__?.cards?.[key]||null);
     const sv=window.__SAVED__&&window.__SAVED__.cards&&window.__SAVED__.cards[key];
-    if(sv && ((sv.sourceBuild && sv.sourceBuild!==BUILD) || (sv.sourceDataAtual && sv.sourceDataAtual!==E.meta.atual))){
+    /* Mesmo na mesma build, snapshots legados podem ter uma lista de semanas
+       truncada (ex.: soja até 7 em vez de 9). Nesse caso, refazer a série
+       com o CWR atual e reaplicar só atributos de apresentação. */
+    const staleWeek=!!(sv&&c.sem&&(()=>{
+      const temp=document.createElement('div');temp.innerHTML=sv.html||'';
+      const select=temp.querySelector('select[data-role="week"]');
+      return !select||![...select.options].some(opt=>Number(opt.value)===wkNow(com));
+    })());
+    if(sv && ((sv.sourceBuild && sv.sourceBuild!==BUILD) || (sv.sourceDataAtual && sv.sourceDataAtual!==E.meta.atual) || staleWeek)){
       delete window.__SAVED__.cards[key];
       let rebuilt;
       try{rebuilt=buildCard(com,c);applyCardRebase(rebuilt,sv,c);}
