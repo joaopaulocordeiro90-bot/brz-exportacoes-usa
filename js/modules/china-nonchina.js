@@ -181,7 +181,7 @@ function attachHover(chart,graph,config){
    if(down&&event.pointerType==='touch')touchActive=true;
  };
  svg.addEventListener('pointerenter',e=>{touchActive=e.pointerType==='touch';hover(e);});
- svg.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&e.cancelable)e.preventDefault();hover(e);},{passive:false});
+ svg.addEventListener('pointermove',e=>hover(e));
  svg.addEventListener('pointerdown',e=>hover(e,true));
  svg.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')close();});
  svg.addEventListener('keydown',e=>{
@@ -207,10 +207,10 @@ function attachHover(chart,graph,config){
 function build(com,c,saved){
  const base=defaultConfig(),config=fromSnapshot(saved,base);
  const el=document.createElement('div');
- el.className='p-card';el.dataset.card=CARD;el.style.gridColumn='1 / -1';
- el.style.minWidth='0';el.style.height='auto';el.style.minHeight='455px';
- if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';el.style.height='auto';el.style.minHeight='455px';}
- el.innerHTML='<div class="p-card-h"><div><div class="p-card-t etext">'+c.t+'</div><div class="p-card-s etext">'+c.s+'</div></div><div class="cardtools"><div class="selrow" data-cnnon-controls="1" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"></div><div class="pal"></div></div></div><div class="china-year-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 15px 1px;font-size:11px"><strong>Comparar MY:</strong></div><div class="chart" style="padding:4px 8px 0;min-height:240px"></div><div class="china-metrics" style="padding:2px 15px 9px"></div><div class="lg china-legend" style="display:flex;flex-wrap:wrap;column-gap:16px;row-gap:5px;padding:2px 14px 12px;font-size:11px"></div><div class="foot"><span class="etext">Fonte: USDA/FAS ESR · China / Não-China identificado / UNKNOWN</span><span class="etext">Mi t · Share</span></div>';
+ el.className='p-card cnnon-card';el.dataset.card=CARD;el.style.gridColumn='1 / -1';
+ el.style.minWidth='0';el.style.height='auto';el.style.minHeight='555px';
+ if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';el.style.height='auto';el.style.minHeight='555px';}
+ el.innerHTML='<div class="p-card-h"><div><div class="p-card-t etext">'+c.t+'</div><div class="p-card-s etext">'+c.s+'</div></div><div class="cardtools"><div class="selrow" data-cnnon-controls="1" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"></div><div class="pal"></div></div></div><div class="china-year-controls"><strong>Comparar MY</strong></div><div class="chart cnnon-chart" title="Passe o mouse sobre as linhas para consultar qualquer semana"></div><div class="china-metrics" style="padding:2px 15px 9px"></div><div class="lg china-legend" style="display:flex;flex-wrap:wrap;column-gap:16px;row-gap:5px;padding:2px 14px 12px;font-size:11px"></div><div class="foot"><span class="etext">Fonte: USDA/FAS ESR · China / Não-China identificado / UNKNOWN</span><span class="etext">Mi t · Share</span></div>';
  const title=el.querySelector('.p-card-t'),sub=el.querySelector('.p-card-s');
  if(config.title&&config.title!==c.t)title.textContent=config.title;
  if(config.sub&&config.sub!==c.s)sub.textContent=config.sub;
@@ -230,6 +230,9 @@ function build(com,c,saved){
   if(cb.checked)cb.setAttribute('checked','');
   lab.appendChild(cb);lab.appendChild(document.createTextNode(label(y)));yearbar.appendChild(lab);
  }
+ const quickLast=document.createElement('button');quickLast.type='button';quickLast.className='cnnon-quick';quickLast.dataset.cnnonPreset='last';quickLast.textContent='Atual + anterior';quickLast.title='Manter apenas as safras atual e anterior';
+ const quickClear=document.createElement('button');quickClear.type='button';quickClear.className='cnnon-quick';quickClear.dataset.cnnonPreset='clear';quickClear.textContent='Limpar anos';quickClear.title='Exibir apenas o MY vigente';
+ yearbar.append(quickLast,quickClear);
  const pal=el.querySelector('.pal');
  const reset=document.createElement('button');reset.className='mini rst';reset.style.display='inline-block';reset.textContent='↺';reset.title='Reiniciar comparação e filtros';
  const png=document.createElement('button');png.className='mini png';png.textContent='⤓';png.title='Exportar gráfico PNG';
@@ -240,27 +243,45 @@ function build(com,c,saved){
  };
  const draw=()=>{
   const graph=graphic(config);
-  el.querySelector('.chart').innerHTML=graph.svg;
+  const chart=el.querySelector('.chart');chart.innerHTML=graph.svg;
   const lg=el.querySelector('.china-legend');lg.innerHTML='';
   for(const l of graph.legends){
-   const sp=document.createElement('span');sp.style.cssText='display:inline-flex;gap:5px;align-items:center;color:#344054';
-   sp.innerHTML='<svg width="24" height="9" viewBox="0 0 24 9"><line x1="1" y1="4.5" x2="23" y2="4.5" stroke="'+l.color+'" stroke-width="'+(l.now?'3':'2')+'"'+(l.dash?' stroke-dasharray="'+l.dash+'"':'')+' /></svg><b>'+label(l.year)+' '+(l.kind==='china'?'China':'Não-China')+'</b>'+(l.missing?' <span style="opacity:.5">—</span>':'');
+   const sp=document.createElement('span');sp.className='cnnon-legend-entry'+(l.now?' current':'');
+   sp.title=(l.now?'Safra atual — linha sólida':'Histórico — traço '+(l.dash||'contínuo'));
+   sp.innerHTML='<svg width="42" height="11" viewBox="0 0 42 11" aria-hidden="true"><line x1="1" y1="5.5" x2="41" y2="5.5" stroke="'+l.color+'" stroke-width="'+(l.now?'4':'2.8')+'"'+(l.dash?' stroke-dasharray="'+l.dash+'"':'')+' stroke-linecap="round" /></svg><b>'+label(l.year)+' · '+(l.kind==='china'?'China':'Não-China')+'</b>'+(l.missing?' <span class="cnnon-no-read">s/d</span>':'');
    lg.appendChild(sp);
   }
   const metrics=el.querySelector('.china-metrics'),current=graph.at[lastYear];
-  const line=(y,d)=>{
-   if(!d)return '<span style="color:#64748b">'+label(y)+': sem leitura completa na sem. '+config.week+'</span>';
-   const value=(k)=>fmt(config.mode==='share'?d[k+'Pct']:d[k]/1000)+(config.mode==='share'?'%':' Mi t');
-   return '<b>'+label(y)+'</b> · China <b style="color:'+NAVY+'">'+value('china')+'</b> · Não-China <b style="color:'+TEAL+'">'+value('other')+'</b> · UNKNOWN '+fmt(d.unknown/1000)+' Mi t';
+  const prev=graph.at[lastYear-1]||null;
+  const pctDelta=(k)=>current&&prev?(current[k+'Pct']-prev[k+'Pct']):null;
+  const volDelta=(k)=>current&&prev?(current[k]-prev[k])/1000:null;
+  const signed=(v,suffix,precision=1)=>v==null?'s/d':(v>0?'+':'')+new Intl.NumberFormat('pt-BR',{minimumFractionDigits:precision,maximumFractionDigits:precision}).format(v)+suffix;
+  const metric=(key,name,color)=>{
+    const value=current?(config.mode==='share'?fmt(current[key+'Pct'])+'%':fmt(current[key]/1000)+' Mi t'):'s/d';
+    const delta=config.mode==='share'?signed(pctDelta(key),' p.p.'):signed(volDelta(key),' Mi t');
+    const changed=(config.mode==='share'?pctDelta(key):volDelta(key));
+    return '<div class="cnnon-kpi"><div class="cnnon-kpi-head"><i style="background:'+color+'"></i>'+name+'</div><b>'+value+'</b><small>vs '+label(lastYear-1)+': <span class="'+(changed==null?'':changed>=0?'positive':'negative')+'">'+delta+'</span></small></div>';
   };
-  metrics.innerHTML='<div style="font-size:12px;line-height:1.6">'+line(lastYear,current)+'</div><div style="font-size:10px;color:#667085;margin-top:3px">Não-China = MUNDO − China − UNKNOWN. Share (%) = respectivo destino ÷ commitment MUNDO. UNKNOWN é mantido fora das duas linhas; lacunas no histórico não são preenchidas.</div>';
+  const remaining=current?'<div class="cnnon-kpi"><div class="cnnon-kpi-head"><i style="background:#a5b3bf"></i>UNKNOWN</div><b>'+fmt(current.unknown/1000)+' Mi t</b><small>'+fmt(current.unknownPct)+'% do commitment</small></div>':'';
+  metrics.innerHTML='<div class="cnnon-kpi-heading"><strong>Semana '+config.week+' · MY '+label(lastYear)+'</strong><span>'+(config.mode==='share'?'Participação no total · evolução em pontos percentuais':'Commitment acumulado · evolução em Mi t')+'</span></div>'+
+   '<div class="cnnon-kpis">'+metric('china','China',NAVY)+metric('other','Não-China',TEAL)+remaining+'</div>'+
+   '<p class="cnnon-footnote">Não-China = MUNDO − China − UNKNOWN. Share (%) considera o commitment MUNDO, inclusive UNKNOWN. Lacunas históricas não são interpoladas.</p>';
   sync();
   if(typeof window.wmFix==='function')window.wmFix(el);
   if(window.BRZFIT)window.BRZFIT(el);
+  attachHover(chart,graph,config);
  };
  wk.onchange=()=>{config.week=Number(wk.value);draw();};
  mode.onchange=()=>{config.mode=mode.value;draw();};
  yearbar.onchange=()=>{config.compare=[...yearbar.querySelectorAll('input:checked')].map(x=>Number(x.dataset.compareYear));draw();};
+ const quickPreset=which=>{
+   const latest=years().at(-1);
+   config.compare=which==='last'?[latest-1].filter(y=>years().includes(y)):[];
+   yearbar.querySelectorAll('input[data-compare-year]').forEach(cb=>{cb.checked=config.compare.includes(Number(cb.dataset.compareYear));});
+   draw();
+ };
+ quickLast.onclick=()=>quickPreset('last');
+ quickClear.onclick=()=>quickPreset('clear');
  reset.onclick=()=>{const d=defaultConfig();config.week=d.week;config.mode=d.mode;config.compare=d.compare;wk.value=String(config.week);mode.value=config.mode;yearbar.querySelectorAll('input').forEach(cb=>cb.checked=config.compare.includes(Number(cb.dataset.compareYear)));draw();};
  png.onclick=()=>{if(typeof window.baixar==='function')window.baixar(el,'soja_china_nao_china_semana_'+config.week,920,490);};
  el._getWeek=()=>config.week;el._getMode=()=>config.mode;el._draw=draw;
