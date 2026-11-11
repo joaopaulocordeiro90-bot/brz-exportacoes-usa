@@ -142,7 +142,18 @@ assert(hoverRect&&hoverRect.width>500,'área SVG de leitura');
 const pointerX=w=>hoverRect.x+(62+(w-1)/8*773)/900*hoverRect.width;
 const pointerY=v=>hoverRect.y+v/315*hoverRect.height;
 await page.mouse.move(pointerX(7),pointerY(135));
-await page.waitForFunction(()=>!document.querySelector('[data-card="cnnoncommit|soja"] .cnnon-tooltip')?.hidden);
+await page.waitForTimeout(170);
+const hovered=await page.evaluate(()=>{
+ const card=document.querySelector('[data-card="cnnoncommit|soja"]');
+ const chart=card.querySelector('.cnnon-chart'),svg=chart.querySelector('svg[data-cnnon-graph]'),
+       tt=chart.querySelector('.cnnon-tooltip'),rect=svg.getBoundingClientRect(),matrix=svg.getScreenCTM();
+ const pt=svg.createSVGPoint();pt.x=rect.left+rect.width*641.75/900;pt.y=rect.top+rect.height*135/315;
+ const svgp=matrix?pt.matrixTransform(matrix.inverse()):null;
+ return {ready:chart.dataset.cnnonHover,hidden:tt?.hidden,layer:svg.querySelector('[data-cnnon-hover-layer]')?.getAttribute('visibility'),
+   chart:chart.getBoundingClientRect().toJSON(),svg:rect.toJSON(),matrix:matrix?String(matrix):null,
+   svgPointer:svgp?{x:svgp.x,y:svgp.y}:null};
+});
+assert.equal(hovered.hidden,false,'hover should open tooltip '+JSON.stringify({hovered,errors}));
 const tt=compareCard.locator('.cnnon-tooltip');
 assert(await tt.isVisible(),'tooltip mouse disponível');
 let textHover=await tt.innerText();
