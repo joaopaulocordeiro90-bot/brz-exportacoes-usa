@@ -2376,6 +2376,25 @@ function buildCard(com,c){
 }
 function reviveCard(el,com,c){
   if(c.id==='cnnoncommit')return window.BRZChinaNonChina.revive(el,com,c);
+  /* Grids estáticos pré-renderizados no index bypassam buildCard ao reabrir.
+     Reconstruir seletores semanais que não contêm a semana FAS atual. */
+  if(c.sem){
+    const weekSelect=el.querySelector('select[data-role="week"]');
+    const latest=wkNow(com);
+    if(!weekSelect||![...weekSelect.options].some(op=>Number(op.value)===latest)){
+      const key=c.id+'|'+com;
+      const saved=window.__SAVED__?.cards?.[key]||
+        {html:el.innerHTML,style:el.getAttribute('style')||'',baseTitle:c.t,baseSubtitle:c.s};
+      if(window.__SAVED__?.cards)delete window.__SAVED__.cards[key];
+      const fresh=buildCard(com,c);
+      applyCardRebase(fresh,saved,c);
+      el.replaceWith(fresh);
+      if(window.__SAVED__?.cards)window.__SAVED__.cards[key]={
+        html:fresh.innerHTML,style:fresh.getAttribute('style')||'',
+        sourceBuild:BUILD,sourceDataAtual:E.meta.atual,baseTitle:c.t,baseSubtitle:c.s};
+      return fresh;
+    }
+  }
   if(c.id==='heatcommit'&&!el.querySelector('select[data-role="metric"]')){
     const week=el.querySelector('select[data-role="week"]')?.value;
     const style=el.getAttribute('style');
