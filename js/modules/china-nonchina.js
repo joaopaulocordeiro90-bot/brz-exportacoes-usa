@@ -95,8 +95,8 @@ function build(com,c,saved){
  const base=defaultConfig(),config=fromSnapshot(saved,base);
  const el=document.createElement('div');
  el.className='p-card';el.dataset.card=CARD;el.style.gridColumn='1 / -1';
- el.style.minWidth='0';
- if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';}
+ el.style.minWidth='0';el.style.height='auto';el.style.minHeight='455px';
+ if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';el.style.height='auto';el.style.minHeight='455px';}
  el.innerHTML='<div class="p-card-h"><div><div class="p-card-t etext">'+c.t+'</div><div class="p-card-s etext">'+c.s+'</div></div><div class="cardtools"><div class="selrow" data-cnnon-controls="1" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"></div><div class="pal"></div></div></div><div class="china-year-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 15px 1px;font-size:11px"><strong>Comparar MY:</strong></div><div class="chart" style="padding:4px 8px 0;min-height:240px"></div><div class="china-metrics" style="padding:2px 15px 9px"></div><div class="lg china-legend" style="display:flex;flex-wrap:wrap;column-gap:16px;row-gap:5px;padding:2px 14px 12px;font-size:11px"></div><div class="foot"><span class="etext">Fonte: USDA/FAS ESR · China / Não-China identificado / UNKNOWN</span><span class="etext">Mi t · Share</span></div>';
  const title=el.querySelector('.p-card-t'),sub=el.querySelector('.p-card-s');
  if(config.title&&config.title!==c.t)title.textContent=config.title;
