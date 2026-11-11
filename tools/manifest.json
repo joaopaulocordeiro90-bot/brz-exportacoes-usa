@@ -143,6 +143,11 @@
    "path": "data/patches/eua-wasde-2026-11-10.js"
   },
   {
+   "open_mod": "<script id=\"brz-china-nonchina\" src=\"js/modules/china-nonchina.js\">",
+   "open": "<script id=\"brz-china-nonchina\">",
+   "path": "js/modules/china-nonchina.js"
+  },
+  {
    "open_mod": "<script id=\"brz-dyn-native\" src=\"js/charts/dyn-native.js\">",
    "open": "<script id=\"brz-dyn-native\">",
    "path": "js/charts/dyn-native.js"

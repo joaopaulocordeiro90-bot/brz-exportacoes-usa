@@ -658,6 +658,7 @@ function cardsFor(com){
    {id:'regua',t:`Commit por safra - ${nm}`,s:'Em Mi t · mesma semana do MY · média histórica',fn:gRegua,filt:1,sem:1,u:'Mi t'},
    {id:'commitpct',t:`${nm} EUA - Total comprometido vs. programa do USDA`,s:`Em % · semana (${wk})`,fn:gCommitPct,filt:0,share:1,sem:1,u:'%'},
    {id:'donut',t:`Destinos do commit atual - ${nm}`,s:'Em % · semana selecionada do MY',fn:gDonut,filt:0,sem:1,u:'%'},
+   ...(com==='soja'?[{id:'cnnoncommit',t:'Soja EUA — China vs destinos não-China',s:'Commitment acumulado por semana do MY · comparação histórica · UNKNOWN separado',custom:1,u:'Mi t / %'}]:[]),
    {id:'rank',t:`Commit por destino - ${nm}`,s:'Em Mi t · semana selecionada do MY · top 10 países',fn:gRankDest,filt:0,sem:1,u:'Mi t'},
    {id:'dumb',t:`Embarcado por destino - ${nm}`,s:'Em Mi t · semana selecionada do MY · safra atual vs anterior',fn:gDumb,filt:0,sem:1,u:'Mi t'},
    {id:'grupo',t:`Composição do commit por safra - ${nm}`,s:'Em Mi t · semana selecionada do MY · embarcado + a embarcar',fn:gGrupo,filt:1,sem:1,u:'Mi t'},
@@ -2010,7 +2011,7 @@ function baixar(el,tit,cwArg,chArg){
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
 }
 
-const BUILD='e98 · 10Nov';
+const BUILD='e99 · 11Nov';
 let LOGO_URL='';
 try{const _b64=null; }catch(e){}
 function _mkLogoUrl(){try{const b64=LOGO_HREF.split(',')[1];const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return URL.createObjectURL(new Blob([u8],{type:'image/png'}));}catch(e){return LOGO_HREF;}}
@@ -2253,8 +2254,17 @@ function applyCardRebase(el,sv,c){
 }
 function buildCard(com,c){
     const key=c.id+'|'+com;
+    if(c.id==='cnnoncommit')return window.BRZChinaNonChina.build(com,c,window.__SAVED__?.cards?.[key]||null);
     const sv=window.__SAVED__&&window.__SAVED__.cards&&window.__SAVED__.cards[key];
-    if(sv && ((sv.sourceBuild && sv.sourceBuild!==BUILD) || (sv.sourceDataAtual && sv.sourceDataAtual!==E.meta.atual))){
+    /* Mesmo na mesma build, snapshots legados podem ter uma lista de semanas
+       truncada (ex.: soja até 7 em vez de 9). Nesse caso, refazer a série
+       com o CWR atual e reaplicar só atributos de apresentação. */
+    const staleWeek=!!(sv&&c.sem&&(()=>{
+      const temp=document.createElement('div');temp.innerHTML=sv.html||'';
+      const select=temp.querySelector('select[data-role="week"]');
+      return !select||![...select.options].some(opt=>Number(opt.value)===wkNow(com));
+    })());
+    if(sv && ((sv.sourceBuild && sv.sourceBuild!==BUILD) || (sv.sourceDataAtual && sv.sourceDataAtual!==E.meta.atual) || staleWeek)){
       delete window.__SAVED__.cards[key];
       let rebuilt;
       try{rebuilt=buildCard(com,c);applyCardRebase(rebuilt,sv,c);}
@@ -2365,6 +2375,26 @@ function buildCard(com,c){
     return el;
 }
 function reviveCard(el,com,c){
+  if(c.id==='cnnoncommit')return window.BRZChinaNonChina.revive(el,com,c);
+  /* Grids estáticos pré-renderizados no index bypassam buildCard ao reabrir.
+     Reconstruir seletores semanais que não contêm a semana FAS atual. */
+  if(c.sem){
+    const weekSelect=el.querySelector('select[data-role="week"]');
+    const latest=wkNow(com);
+    if(!weekSelect||![...weekSelect.options].some(op=>Number(op.value)===latest)){
+      const key=c.id+'|'+com;
+      const saved=window.__SAVED__?.cards?.[key]||
+        {html:el.innerHTML,style:el.getAttribute('style')||'',baseTitle:c.t,baseSubtitle:c.s};
+      if(window.__SAVED__?.cards)delete window.__SAVED__.cards[key];
+      const fresh=buildCard(com,c);
+      applyCardRebase(fresh,saved,c);
+      el.replaceWith(fresh);
+      if(window.__SAVED__?.cards)window.__SAVED__.cards[key]={
+        html:fresh.innerHTML,style:fresh.getAttribute('style')||'',
+        sourceBuild:BUILD,sourceDataAtual:E.meta.atual,baseTitle:c.t,baseSubtitle:c.s};
+      return fresh;
+    }
+  }
   if(c.id==='heatcommit'&&!el.querySelector('select[data-role="metric"]')){
     const week=el.querySelector('select[data-role="week"]')?.value;
     const style=el.getAttribute('style');
