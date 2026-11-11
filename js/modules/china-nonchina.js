@@ -49,48 +49,161 @@ function fromSnapshot(saved,base){
 function graphic(config){
  const yy=years(),cur=yy.at(-1);
  const sel=[...new Set([cur,...config.compare])].sort((a,b)=>a-b);
- const all=sel.flatMap(y=>rows(y).filter(p=>!p.missing&&p.week<=config.week));
+ const selectedYears=sel.filter(y=>y!==cur).concat(cur);
+ const all=selectedYears.flatMap(y=>rows(y).filter(p=>!p.missing&&p.week<=config.week));
  const keys=config.mode==='share'?['chinaPct','otherPct']:['china','other'];
- const ymax=config.mode==='share'?100:Math.max(5,Math.ceil(Math.max(0,...all.flatMap(r=>keys.map(k=>r[k]/1000)))/5)*5);
  const toValue=(r,k)=>config.mode==='share'?r[k]:r[k]/1000;
- const maxY=config.mode==='share'?100:ymax;
- const X=w=>58+(w-1)/52*783, Y=v=>244-v/maxY*208, parts=[];
- const escape=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
- parts.push('<svg data-cnnon-graph="1" viewBox="0 0 900 288" width="100%" xmlns="'+NS+'" role="img" aria-label="Curvas de commitment soja China e destinos não-China, em '+(config.mode==='share'?'percentual':'milhões de toneladas')+' até a semana '+config.week+'" style="display:block;background:#fff;border-radius:4px">');
- // Graphic grid with reference axis.
- const yTicks=config.mode==='share'?[0,25,50,75,100]:[0,.25,.5,.75,1].map(q=>q*maxY);
- yTicks.forEach(v=>parts.push('<line x1="58" y1="'+Y(v).toFixed(1)+'" x2="841" y2="'+Y(v).toFixed(1)+'" stroke="#e6ebef" stroke-width="1"/><text x="49" y="'+(Y(v)+3).toFixed(1)+'" font-size="11" fill="#6b7280" text-anchor="end">'+fmt(v)+(config.mode==='share'?'%':'')+'</text>'));
- [1,5,9,13,17,21,25,29,33,37,41,45,49,53].forEach(w=>parts.push('<text x="'+X(w).toFixed(1)+'" y="269" font-size="10" text-anchor="middle" fill="#6b7280">'+w+'</text>'));
- parts.push('<text x="450" y="286" text-anchor="middle" font-size="10" fill="#6b7280">Semana do MY (set–ago)</text>');
- parts.push('<line x1="'+X(config.week).toFixed(1)+'" y1="29" x2="'+X(config.week).toFixed(1)+'" y2="244" stroke="#64748b" stroke-dasharray="2 4" stroke-width="1"/>');
- const legends=[];
- const sorted=sel.filter(y=>y!==cur).concat(cur);
- for(const year of sorted){
-  const historical=year!==cur,index=yy.indexOf(year),dash=historical?HIST_DASH[index%HIST_DASH.length]:'';
-  const r=rows(year).filter(p=>!p.missing&&p.week<=config.week);
-  for(const [kind,key,color] of [['china',keys[0],NAVY],['other',keys[1],TEAL]]){
-    let segments=[],seg=[],lastWeek=null;
-    const flush=()=>{if(seg.length>1)segments.push(seg);seg=[]};
-    for(const p of r){if(lastWeek!==null&&p.week-lastWeek>1)flush();seg.push(p);lastWeek=p.week;}
-    flush();
-    for(const block of segments){
-      const path=block.map((p,i)=>(i?'L':'M')+X(p.week).toFixed(1)+' '+Y(toValue(p,key)).toFixed(1)).join(' ');
-      parts.push('<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="'+(historical?'1.9':'3.3')+'" stroke-opacity="'+(historical?'0.63':'1')+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round" stroke-linejoin="round"/>');
-    }
-    if(r.length===1){const p=r[0];parts.push('<circle cx="'+X(p.week).toFixed(1)+'" cy="'+Y(toValue(p,key)).toFixed(1)+'" r="2.7" fill="'+color+'"/>');}
-    // Week X is a point of comparison; never replace missing data by zero.
-    const selected=r.find(p=>p.week===config.week);
-    if(selected){
-      const v=toValue(selected,key),shown=fmt(v)+(config.mode==='share'?'%':' Mi t');
-      parts.push('<circle data-cnnon-point="'+year+'-'+kind+'" cx="'+X(config.week).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="'+(historical?'3.5':'5')+'" fill="'+color+'" fill-opacity="'+(historical?'0.75':'1')+'" stroke="#fff" stroke-width="1.4"><title>'+escape(label(year)+' · '+(kind==='china'?'China':'Não-China')+' · '+shown)+'</title></circle>');
-      if(!historical)parts.push('<text x="'+Math.min(864,X(config.week)+8).toFixed(1)+'" y="'+(Y(v)+(kind==='china'?-11:15)).toFixed(1)+'" font-size="12" font-weight="700" fill="'+color+'">'+shown+'</text>');
-    }
-    legends.push({year,kind,color,dash,now:!historical,missing:!selected});
-  }
+ const maxObs=Math.max(0,...all.flatMap(r=>keys.map(k=>toValue(r,k))));
+ const niceMax=v=>{const raw=Math.max(v*1.14,3),mag=10**Math.floor(Math.log10(raw)),n=raw/mag;return (n<=1?1:n<=1.5?1.5:n<=2?2:n<=3?3:n<=5?5:10)*mag;};
+ const maxVal=config.mode==='share'?100:niceMax(maxObs),maxWeek=Math.max(config.week,9);
+ const box={x0:62,x1:835,y0:32,y1:259,maxWeek,maxVal};
+ const X=w=>box.x0+(w-1)/(maxWeek-1)*(box.x1-box.x0);
+ const Y=v=>box.y1-v/maxVal*(box.y1-box.y0);
+ const parts=[],esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+ const histDash=['12 6','3 6','12 4 2 4','6 4 1 4','18 5'];
+ const fmtAxis=v=>config.mode==='share'?fmt(v)+'%':fmt(v);
+ parts.push('<svg data-cnnon-graph="1" viewBox="0 0 900 315" xmlns="'+NS+'" role="img" tabindex="0" aria-label="Compromisso de soja China e não-China até a semana '+config.week+'; passe o mouse ou use as setas do teclado" preserveAspectRatio="xMidYMid meet">');
+ parts.push('<rect x="0" y="0" width="900" height="315" rx="10" fill="#fff"/>');
+ parts.push('<text x="62" y="17" fill="#64748b" font-size="10" font-weight="600">'+(config.mode==='share'?'Participação no commitment total (%)':'Commitment acumulado (Mi t)')+'</text>');
+ const ticks=Array.from({length:5},(_,i)=>maxVal*i/4);
+ for(const v of ticks){
+   const y=Y(v);
+   parts.push('<line x1="'+box.x0+'" y1="'+y.toFixed(2)+'" x2="'+box.x1+'" y2="'+y.toFixed(2)+'" stroke="'+(v===0?'#aebdc9':'#e9eef2')+'" stroke-width="'+(v===0?'1.2':'1')+'"/>');
+   parts.push('<text x="'+(box.x0-12)+'" y="'+(y+3).toFixed(2)+'" text-anchor="end" font-size="10.2" fill="#718096">'+fmtAxis(v)+'</text>');
  }
- parts.push('</svg>');
- return {svg:parts.join(''),legends,years:sorted,at:Object.fromEntries(sorted.map(y=>[y,seriesAt(y,config.week)]))};
+ const step=maxWeek<=12?1:maxWeek<=24?2:maxWeek<=42?5:8;
+ const weekTicks=[1];for(let w=1+step;w<=maxWeek;w+=step)weekTicks.push(w);
+ if(weekTicks.at(-1)!==maxWeek)weekTicks.push(maxWeek);
+ for(const w of weekTicks){
+   const x=X(w);
+   parts.push('<text x="'+x.toFixed(2)+'" y="278" text-anchor="middle" font-size="10.5" fill="'+(w===config.week?'#193650':'#8392a2')+'" font-weight="'+(w===config.week?'700':'500')+'">'+w+'</text>');
+ }
+ parts.push('<text x="450" y="302" text-anchor="middle" font-size="10.5" fill="#64748b">Semana do ano comercial (MY)</text>');
+ const selectedX=X(config.week);
+ parts.push('<line data-cnnon-selected-week="1" x1="'+selectedX.toFixed(2)+'" y1="'+box.y0+'" x2="'+selectedX.toFixed(2)+'" y2="'+box.y1+'" stroke="#92a4b3" stroke-width="1.3" stroke-dasharray="3 6"/>');
+ const series=[],legends=[];
+ for(const year of selectedYears){
+   const historical=year!==cur,idx=yy.filter(y=>y!==cur).indexOf(year),dash=historical?histDash[idx%histDash.length]:'';
+   const source=rows(year).filter(p=>!p.missing&&p.week<=config.week);
+   for(const [kind,key,color] of [['china',keys[0],NAVY],['other',keys[1],TEAL]]){
+     let segments=[],seg=[],lastWeek=null;
+     const flush=()=>{if(seg.length>1)segments.push(seg);seg=[]};
+     for(const p of source){if(lastWeek!==null&&p.week-lastWeek>1)flush();seg.push(p);lastWeek=p.week;}
+     flush();
+     const width=historical?2.5:4.2,opacity=historical?0.75:1;
+     for(const block of segments){
+       const d=block.map((p,i)=>(i?'L':'M')+X(p.week).toFixed(2)+' '+Y(toValue(p,key)).toFixed(2)).join(' ');
+       parts.push('<path data-cnnon-series="'+year+'-'+kind+'" d="'+d+'" fill="none" stroke="'+color+'" stroke-width="'+width+'" stroke-opacity="'+opacity+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"/>');
+     }
+     if(source.length===1){const p=source[0];parts.push('<circle cx="'+X(p.week).toFixed(2)+'" cy="'+Y(toValue(p,key)).toFixed(2)+'" r="3" fill="'+color+'"/>');}
+     const at=source.find(p=>p.week===config.week)||null;
+     if(at){
+       const v=toValue(at,key),shown=fmt(v)+(config.mode==='share'?'%':' Mi t');
+       parts.push('<circle data-cnnon-point="'+year+'-'+kind+'" cx="'+X(at.week).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="'+(historical?'4':'5.6')+'" fill="#fff" stroke="'+color+'" stroke-width="'+(historical?'2':'3')+'"><title>'+esc(label(year)+' · '+(kind==='china'?'China':'Não-China')+' · '+shown)+'</title></circle>');
+       if(!historical){
+         // Label at the current endpoint, with an opaque backing for readability.
+         const text=kind==='china'?'China':'Não-China';
+         const wText=(text.length+shown.length)*6.3+22;
+         const right=X(at.week)+wText+10<=897,tx=right?X(at.week)+9:X(at.week)-9;
+         const baseY=Math.min(box.y1-9,Math.max(box.y0+14,Y(v)+(kind==='china'?-14:20)));
+         const rx=right?tx-4:tx-wText+4;
+         parts.push('<rect x="'+rx.toFixed(2)+'" y="'+(baseY-12).toFixed(2)+'" width="'+wText.toFixed(2)+'" height="19" rx="6" fill="#fff" fill-opacity=".94" stroke="#edf1f4"/>');
+         parts.push('<text data-cnnon-endlabel="'+kind+'" x="'+tx.toFixed(2)+'" y="'+(baseY+1).toFixed(2)+'" text-anchor="'+(right?'start':'end')+'" font-size="11" font-weight="800" fill="'+color+'">'+text+' · '+shown+'</text>');
+       }
+     }
+     series.push({year,kind,key,color,dash,now:!historical,points:source});
+     legends.push({year,kind,color,dash,now:!historical,missing:!at});
+   }
+ }
+ // Crosshair overlays are updated in place; they never change the underlying data.
+ parts.push('<g data-cnnon-hover-layer="1" visibility="hidden" pointer-events="none">');
+ parts.push('<line data-cnnon-crosshair-x="1" x1="0" y1="'+box.y0+'" x2="0" y2="'+box.y1+'" stroke="#536779" stroke-width="1.5" stroke-dasharray="4 4"/>');
+ parts.push('<line data-cnnon-crosshair-y="1" x1="'+box.x0+'" y1="0" x2="'+box.x1+'" y2="0" stroke="#98a8b5" stroke-width="1" stroke-dasharray="3 6"/>');
+ parts.push('<g data-cnnon-hover-markers="1"></g></g></svg>');
+ return {svg:parts.join(''),legends,years:selectedYears,at:Object.fromEntries(selectedYears.map(y=>[y,seriesAt(y,config.week)])),
+   series,box,X,Y,toValue,
+   hoverWeeks:[...new Set(all.map(p=>p.week))].sort((a,b)=>a-b)};
 }
+function attachHover(chart,graph,config){
+ const svg=chart.querySelector('svg[data-cnnon-graph]');if(!svg)return;
+ const tip=document.createElement('div');tip.className='cnnon-tooltip';tip.hidden=true;
+ tip.setAttribute('role','status');tip.setAttribute('aria-live','off');chart.appendChild(tip);
+ const layer=svg.querySelector('[data-cnnon-hover-layer]'),vertical=svg.querySelector('[data-cnnon-crosshair-x]'),
+   horizontal=svg.querySelector('[data-cnnon-crosshair-y]'),markers=svg.querySelector('[data-cnnon-hover-markers]');
+ const fmtValue=(d,k)=>config.mode==='share'?fmt(d[k+'Pct'])+'%':fmt(d[k]/1000)+' Mi t';
+ let activeWeek=null,touchActive=false;
+ const close=()=>{tip.hidden=true;layer.setAttribute('visibility','hidden');markers.textContent='';activeWeek=null;};
+ const show=(week,axisValue,px,py)=>{
+   const sorted=graph.years.filter(y=>y!==years().at(-1)).concat(years().at(-1));
+   const at=sorted.map(y=>({year:y,d:seriesAt(y,week)}));
+   if(!at.some(x=>x.d)){close();return;}
+   activeWeek=week;
+   const xx=graph.X(week),yy=Math.max(graph.box.y0,Math.min(graph.box.y1,graph.Y(axisValue)));
+   vertical.setAttribute('x1',xx.toFixed(2));vertical.setAttribute('x2',xx.toFixed(2));
+   horizontal.setAttribute('y1',yy.toFixed(2));horizontal.setAttribute('y2',yy.toFixed(2));
+   layer.setAttribute('visibility','visible');markers.textContent='';
+   for(const ser of graph.series){
+     const pt=ser.points.find(p=>p.week===week);if(!pt)continue;
+     const circ=document.createElementNS(NS,'circle');
+     circ.setAttribute('cx',String(graph.X(week)));circ.setAttribute('cy',String(graph.Y(graph.toValue(pt,ser.key))));
+     circ.setAttribute('r',ser.now?'6.5':'5.5');circ.setAttribute('fill','#fff');
+     circ.setAttribute('stroke',ser.color);circ.setAttribute('stroke-width',ser.now?'3.2':'2.2');
+     markers.appendChild(circ);
+   }
+   const contents=at.map(({year,d})=>{
+     if(!d)return '<div class="cnnon-tt-row missing"><b>MY '+label(year)+'</b><span>sem observação completa</span></div>';
+     const selected=year===years().at(-1);
+     return '<div class="cnnon-tt-row'+(selected?' current':'')+'"><div class="cnnon-tt-year">MY '+label(year)+(selected?' <small>Atual</small>':'')+'</div>'+
+       '<div class="cnnon-tt-item"><i class="navy"></i><span>China</span><b>'+fmtValue(d,'china')+'</b><small>'+fmt(d.chinaPct)+'%</small></div>'+
+       '<div class="cnnon-tt-item"><i class="teal"></i><span>Não-China</span><b>'+fmtValue(d,'other')+'</b><small>'+fmt(d.otherPct)+'%</small></div>'+
+       '<div class="cnnon-tt-low">UNKNOWN '+fmt(d.unknown/1000)+' Mi t · Total '+fmt(d.total/1000)+' Mi t</div></div>';
+   }).join('');
+   tip.innerHTML='<div class="cnnon-tt-head"><b>Semana '+week+'</b><span>Commitment acumulado</span></div><div class="cnnon-tt-content">'+contents+'</div>';
+   tip.hidden=false;
+   const rect=chart.getBoundingClientRect(),width=tip.offsetWidth,height=tip.offsetHeight;
+   const left=Math.max(6,Math.min(rect.width-width-6,px+17));
+   const top=Math.max(5,Math.min(rect.height-height-5,py+12));
+   tip.style.left=Math.max(6,left)+'px';tip.style.top=Math.max(5,top)+'px';
+ };
+ const hover=(event,down=false)=>{
+   const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+   const matrix=svg.getScreenCTM();if(!matrix)return;
+   const p=point.matrixTransform(matrix.inverse());
+   if(p.x<graph.box.x0-12||p.x>graph.box.x1+12||p.y<graph.box.y0-10||p.y>graph.box.y1+12){
+     if(!touchActive)close();return;
+   }
+   const raw=Math.max(1,Math.min(graph.box.maxWeek,1+(p.x-graph.box.x0)/(graph.box.x1-graph.box.x0)*(graph.box.maxWeek-1)));
+   if(!graph.hoverWeeks.length)return;
+   const target=graph.hoverWeeks.reduce((a,b)=>Math.abs(b-raw)<Math.abs(a-raw)?b:a,graph.hoverWeeks[0]);
+   const rect=chart.getBoundingClientRect();
+   show(target,Math.max(0,Math.min(graph.box.maxVal,(graph.box.y1-p.y)/(graph.box.y1-graph.box.y0)*graph.box.maxVal)),
+     event.clientX-rect.left,event.clientY-rect.top);
+   if(down&&event.pointerType==='touch')touchActive=true;
+ };
+ svg.addEventListener('pointerenter',e=>{touchActive=e.pointerType==='touch';hover(e);});
+ svg.addEventListener('pointermove',e=>{if(e.pointerType==='touch'&&e.cancelable)e.preventDefault();hover(e);},{passive:false});
+ svg.addEventListener('pointerdown',e=>hover(e,true));
+ svg.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')close();});
+ svg.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){close();svg.blur();return;}
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+   e.preventDefault();
+   if(!graph.hoverWeeks.length)return;
+   const w=activeWeek??Math.min(config.week,graph.hoverWeeks.at(-1));
+   const idx=graph.hoverWeeks.indexOf(w);
+   const next=e.key==='Home'?graph.hoverWeeks[0]:e.key==='End'?graph.hoverWeeks.at(-1):
+     graph.hoverWeeks[Math.max(0,Math.min(graph.hoverWeeks.length-1,idx+(e.key==='ArrowRight'?1:-1)))];
+   const shown=graph.series.find(ser=>ser.now&&ser.kind==='china')?.points.find(p=>p.week===next);
+   const value=shown?graph.toValue(shown,config.mode==='share'?'chinaPct':'china'):graph.box.maxVal/2;
+   const rect=svg.getBoundingClientRect(),chartRect=chart.getBoundingClientRect();
+   show(next,value,rect.left-chartRect.left+Math.min(650,graph.X(next)/900*rect.width),
+     rect.top-chartRect.top+60);
+ });
+ chart.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch')close();});
+ chart.dataset.cnnonHover='ready';
+ return {close};
+}
+
 function build(com,c,saved){
  const base=defaultConfig(),config=fromSnapshot(saved,base);
  const el=document.createElement('div');
