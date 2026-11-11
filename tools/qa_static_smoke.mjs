@@ -29,7 +29,7 @@ assert.equal(await gate.isVisible(),false);
 assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
 assert.equal(await page.evaluate(()=>E.meta.gerado),'2026-11-05');
 assert.equal(await page.evaluate(()=>E.meta.wasde_atual),'2026-11-10');
-assert.equal(await page.evaluate(()=>BUILD),'e99 · 11Nov');
+assert.equal(await page.evaluate(()=>BUILD),'e100 · 11Nov');
 assert((await page.locator('#dt').innerText()).includes('WASDE 10/11/26'));
 const wasde=await page.evaluate(()=>{
  const result={};
@@ -127,6 +127,61 @@ assert.equal(await compareCard.locator('circle[data-cnnon-point="2025-china"]').
 assert((await compareCard.locator('.china-metrics').innerText()).includes('8,7'));
 const width=await compareCard.evaluate(el=>el.getBoundingClientRect().width);
 assert(width>600,'card novo deve ocupar ambas as colunas: '+width);
+
+assert.equal(await compareCard.locator('[data-cnnon-endlabel="china"]').count(),1,'rótulo da China');
+assert.equal(await compareCard.locator('[data-cnnon-endlabel="other"]').count(),1,'rótulo não-China');
+const current=compareCard.locator('path[data-cnnon-series="2026-china"]').first();
+const history=compareCard.locator('path[data-cnnon-series="2025-china"]').first();
+assert.equal(await current.getAttribute('stroke-width'),'4.2','linha atual destacada');
+assert.equal(await history.getAttribute('stroke-width'),'2.5','linha histórica perceptível');
+assert((await history.getAttribute('stroke-dasharray')).length>0,'linha histórica tracejada');
+assert.equal(await compareCard.locator('line[data-cnnon-selected-week]').count(),1,'indicador da semana X');
+const svgHover=compareCard.locator('svg[data-cnnon-graph]');
+await svgHover.scrollIntoViewIfNeeded(); // o card está abaixo da dobra na aba Soja
+const hoverRect=await svgHover.boundingBox();
+assert(hoverRect&&hoverRect.width>500,'área SVG de leitura');
+const pointerX=w=>hoverRect.x+(62+(w-1)/8*773)/900*hoverRect.width;
+const pointerY=v=>hoverRect.y+v/315*hoverRect.height;
+await page.mouse.move(pointerX(7),pointerY(135));
+await page.waitForTimeout(170);
+const hovered=await page.evaluate(()=>{
+ const card=document.querySelector('[data-card="cnnoncommit|soja"]');
+ const chart=card.querySelector('.cnnon-chart'),svg=chart.querySelector('svg[data-cnnon-graph]'),
+       tt=chart.querySelector('.cnnon-tooltip'),rect=svg.getBoundingClientRect(),matrix=svg.getScreenCTM();
+ const pt=svg.createSVGPoint();pt.x=rect.left+rect.width*641.75/900;pt.y=rect.top+rect.height*135/315;
+ const svgp=matrix?pt.matrixTransform(matrix.inverse()):null;
+ return {ready:chart.dataset.cnnonHover,hidden:tt?.hidden,layer:svg.querySelector('[data-cnnon-hover-layer]')?.getAttribute('visibility'),
+   chart:chart.getBoundingClientRect().toJSON(),svg:rect.toJSON(),matrix:matrix?String(matrix):null,
+   svgPointer:svgp?{x:svgp.x,y:svgp.y}:null};
+});
+assert.equal(hovered.hidden,false,'hover should open tooltip '+JSON.stringify({hovered,errors}));
+const tt=compareCard.locator('.cnnon-tooltip');
+assert(await tt.isVisible(),'tooltip mouse disponível');
+let textHover=await tt.innerText();
+assert(textHover.includes('Semana 7'),'hover com snap à semana 7');
+assert(textHover.includes('MY 2026/27')&&textHover.includes('MY 2025/26'),'tooltip por safra');
+assert(textHover.includes('China')&&textHover.includes('Não-China')&&textHover.includes('UNKNOWN'),'colunas detalhadas e UNKNOWN');
+assert.equal(await compareCard.locator('[data-cnnon-hover-layer]').getAttribute('visibility'),'visible','crosshair ativo');
+assert(await compareCard.locator('[data-cnnon-hover-markers] circle').count()>=2,'marcadores de série');
+await page.mouse.move(pointerX(8),pointerY(160));
+assert((await tt.innerText()).includes('Semana 8'),'tooltip dinâmico na semana 8');
+await page.mouse.move(hoverRect.x-20,hoverRect.y-20);
+assert.equal(await tt.isVisible(),false,'tooltip fecha ao retirar mouse');
+await svgHover.focus();
+await svgHover.press('ArrowLeft');
+assert((await tt.innerText()).includes('Semana 8'),'navegação acessível por teclado');
+await svgHover.press('Escape');
+assert.equal(await tt.isVisible(),false,'Escape fecha tooltip');
+assert.equal(await compareCard.locator('[data-cnnon-kpi]').count(),0,'não depender de HTML legado dos cards');
+assert.equal(await compareCard.locator('.cnnon-kpi').count(),3,'KPIs China, não-China e UNKNOWN');
+assert((await compareCard.locator('.cnnon-kpi').nth(1).innerText()).includes('vs'),'diferença vs ano anterior no resumo');
+await compareCard.locator('[data-cnnon-preset="clear"]').click();
+assert.equal(await compareCard.locator('input[data-compare-year="2025"]').isChecked(),false,'limpar comparações');
+assert.equal(await compareCard.locator('path[data-cnnon-series="2025-china"]').count(),0,'somente MY atual');
+await compareCard.locator('[data-cnnon-preset="last"]').click();
+assert.equal(await compareCard.locator('input[data-compare-year="2025"]').isChecked(),true,'preset atual + anterior');
+assert.equal(await compareCard.locator('path[data-cnnon-series="2025-china"]').count()>0,true,'série anterior restaurada');
+
 await compareCard.locator('select[data-role="week"]').selectOption('7');
 assert.equal(await compareCard.locator('select[data-role="week"]').inputValue(),'7','corte até semana 7');
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2026-china"]').count(),1);
@@ -177,6 +232,8 @@ assert(html.startsWith('<!DOCTYPE html>'));
 assert(html.includes('window.E')&&html.includes('window.__SAVED__'));
 assert(html.includes('china-nonchina')&&html.includes('data-cnnon-graph'),'gráfico China/Não-China deve permanecer no HTML exportado');
 assert(html.includes('cnnoncommit|soja'),'novo card no HTML exportado');
+assert(html.includes('brz-cnnon-e100-style'),'estilos novos embutidos no HTML exportado');
+assert(html.includes('data-cnnon-crosshair-x'),'crosshair exportado junto ao gráfico');
 assert(!html.includes('id="brz-access-gate"'));
 assert(!html.includes('src="js/core/gate-handler.js"'));
 assert(!html.includes('src="js/core/cloud-sync.js"'));
