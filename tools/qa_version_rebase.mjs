@@ -1,4 +1,4 @@
-/* Regressão independente de Supabase: e100 com hover reaplicada sobre e101 com nova semana. */
+/* Regressão independente de Supabase: e101 compacta reaplicada sobre e102 com nova semana. */
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -27,13 +27,13 @@ const prior=await page.evaluate(()=>{
  saveState();
  return {build:BUILD,old:window.__SAVED__.cards['netsafra|soja'],count:Object.keys(window.__SAVED__.cards).length};
 });
-assert.equal(prior.build,'e100 · 11Nov');
+assert.equal(prior.build,'e101 · 11Nov');
 assert(prior.old.html.includes('OLD DATA'));
 let upgraded=false;
 await page.route('**/js/core/app.js',async route=>{
  const response=await route.fetch();let s=await response.text();
- assert(s.includes("const BUILD='e100 · 11Nov';"));
- s=s.replace("const BUILD='e100 · 11Nov';","const BUILD='e101 · 17Nov';");
+ assert(s.includes("const BUILD='e101 · 11Nov';"));
+ s=s.replace("const BUILD='e101 · 11Nov';","const BUILD='e102 · 17Nov';");
  s="E.meta.atual='2026-11-05';\n"+s;
  upgraded=true;
  await route.fulfill({response,body:s});

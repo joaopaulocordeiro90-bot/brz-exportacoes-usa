@@ -1,4 +1,4 @@
-/* BRZ EUA e99 · Soja: China x destinos não-China, curvas de commitment por MY.
+/* BRZ EUA e101 · Soja: China x destinos não-China, curvas de commitment por MY.
    Fonte única: E.dados.soja.s (USDA/FAS). Não modifica números nem séries.
    UNKNOWN fica separado: não é atribuído à China nem ao não-China identificado. */
 (function(){
@@ -49,80 +49,51 @@ function fromSnapshot(saved,base){
 function graphic(config){
  const yy=years(),cur=yy.at(-1);
  const sel=[...new Set([cur,...config.compare])].sort((a,b)=>a-b);
- const selectedYears=sel.filter(y=>y!==cur).concat(cur);
- const all=selectedYears.flatMap(y=>rows(y).filter(p=>!p.missing&&p.week<=config.week));
+ const all=sel.flatMap(y=>rows(y).filter(p=>!p.missing&&p.week<=config.week));
  const keys=config.mode==='share'?['chinaPct','otherPct']:['china','other'];
+ const ymax=config.mode==='share'?100:Math.max(5,Math.ceil(Math.max(0,...all.flatMap(r=>keys.map(k=>r[k]/1000)))/5)*5);
  const toValue=(r,k)=>config.mode==='share'?r[k]:r[k]/1000;
- const maxObs=Math.max(0,...all.flatMap(r=>keys.map(k=>toValue(r,k))));
- const niceMax=v=>{const raw=Math.max(v*1.14,3),mag=10**Math.floor(Math.log10(raw)),n=raw/mag;return (n<=1?1:n<=1.5?1.5:n<=2?2:n<=3?3:n<=5?5:10)*mag;};
- const maxVal=config.mode==='share'?100:niceMax(maxObs),maxWeek=Math.max(config.week,9);
- const box={x0:62,x1:835,y0:32,y1:259,maxWeek,maxVal};
- const X=w=>box.x0+(w-1)/(maxWeek-1)*(box.x1-box.x0);
- const Y=v=>box.y1-v/maxVal*(box.y1-box.y0);
- const parts=[],esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
- const histDash=['12 6','3 6','12 4 2 4','6 4 1 4','18 5'];
- const fmtAxis=v=>config.mode==='share'?fmt(v)+'%':fmt(v);
- parts.push('<svg data-cnnon-graph="1" viewBox="0 0 900 315" xmlns="'+NS+'" role="img" tabindex="0" aria-label="Compromisso de soja China e não-China até a semana '+config.week+'; passe o mouse ou use as setas do teclado" preserveAspectRatio="xMidYMid meet">');
- parts.push('<rect x="0" y="0" width="900" height="315" rx="10" fill="#fff"/>');
- parts.push('<text x="62" y="17" fill="#64748b" font-size="10" font-weight="600">'+(config.mode==='share'?'Participação no commitment total (%)':'Commitment acumulado (Mi t)')+'</text>');
- const ticks=Array.from({length:5},(_,i)=>maxVal*i/4);
- for(const v of ticks){
-   const y=Y(v);
-   parts.push('<line x1="'+box.x0+'" y1="'+y.toFixed(2)+'" x2="'+box.x1+'" y2="'+y.toFixed(2)+'" stroke="'+(v===0?'#aebdc9':'#e9eef2')+'" stroke-width="'+(v===0?'1.2':'1')+'"/>');
-   parts.push('<text x="'+(box.x0-12)+'" y="'+(y+3).toFixed(2)+'" text-anchor="end" font-size="10.2" fill="#718096">'+fmtAxis(v)+'</text>');
+ const maxY=config.mode==='share'?100:ymax;
+ const box={x0:58,x1:841,y0:36,y1:244,maxWeek:53,maxVal:maxY};
+ const X=w=>box.x0+(w-1)/52*(box.x1-box.x0), Y=v=>box.y1-v/maxY*(box.y1-box.y0), parts=[],series=[];
+ const escape=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+ parts.push('<svg data-cnnon-graph="1" viewBox="0 0 900 288" width="100%" xmlns="'+NS+'" role="img" tabindex="0" aria-label="Curvas de commitment soja China e destinos não-China, em '+(config.mode==='share'?'percentual':'milhões de toneladas')+' até a semana '+config.week+'" style="display:block;background:#fff;border-radius:4px">');
+ // Graphic grid with reference axis.
+ const yTicks=config.mode==='share'?[0,25,50,75,100]:[0,.25,.5,.75,1].map(q=>q*maxY);
+ yTicks.forEach(v=>parts.push('<line x1="58" y1="'+Y(v).toFixed(1)+'" x2="841" y2="'+Y(v).toFixed(1)+'" stroke="#e6ebef" stroke-width="1"/><text x="49" y="'+(Y(v)+3).toFixed(1)+'" font-size="11" fill="#6b7280" text-anchor="end">'+fmt(v)+(config.mode==='share'?'%':'')+'</text>'));
+ [1,5,9,13,17,21,25,29,33,37,41,45,49,53].forEach(w=>parts.push('<text x="'+X(w).toFixed(1)+'" y="269" font-size="10" text-anchor="middle" fill="#6b7280">'+w+'</text>'));
+ parts.push('<text x="450" y="286" text-anchor="middle" font-size="10" fill="#6b7280">Semana do MY (set–ago)</text>');
+ parts.push('<line data-cnnon-selected-week="1" x1="'+X(config.week).toFixed(1)+'" y1="29" x2="'+X(config.week).toFixed(1)+'" y2="244" stroke="#64748b" stroke-dasharray="2 4" stroke-width="1"/>');
+ const legends=[];
+ const sorted=sel.filter(y=>y!==cur).concat(cur);
+ for(const year of sorted){
+  const historical=year!==cur,index=yy.indexOf(year),dash=historical?HIST_DASH[index%HIST_DASH.length]:'';
+  const r=rows(year).filter(p=>!p.missing&&p.week<=config.week);
+  for(const [kind,key,color] of [['china',keys[0],NAVY],['other',keys[1],TEAL]]){
+    let segments=[],seg=[],lastWeek=null;
+    const flush=()=>{if(seg.length>1)segments.push(seg);seg=[]};
+    for(const p of r){if(lastWeek!==null&&p.week-lastWeek>1)flush();seg.push(p);lastWeek=p.week;}
+    flush();
+    for(const block of segments){
+      const path=block.map((p,i)=>(i?'L':'M')+X(p.week).toFixed(1)+' '+Y(toValue(p,key)).toFixed(1)).join(' ');
+      parts.push('<path data-cnnon-series="'+year+'-'+kind+'" d="'+path+'" fill="none" stroke="'+color+'" stroke-width="'+(historical?'2.1':'3.4')+'" stroke-opacity="'+(historical?'0.72':'1')+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round" stroke-linejoin="round"/>');
+    }
+    if(r.length===1){const p=r[0];parts.push('<circle cx="'+X(p.week).toFixed(1)+'" cy="'+Y(toValue(p,key)).toFixed(1)+'" r="2.7" fill="'+color+'"/>');}
+    // Week X is a point of comparison; never replace missing data by zero.
+    const selected=r.find(p=>p.week===config.week);
+    if(selected){
+      const v=toValue(selected,key),shown=fmt(v)+(config.mode==='share'?'%':' Mi t');
+      parts.push('<circle data-cnnon-point="'+year+'-'+kind+'" cx="'+X(config.week).toFixed(1)+'" cy="'+Y(v).toFixed(1)+'" r="'+(historical?'3.5':'5')+'" fill="'+color+'" fill-opacity="'+(historical?'0.75':'1')+'" stroke="#fff" stroke-width="1.4"><title>'+escape(label(year)+' · '+(kind==='china'?'China':'Não-China')+' · '+shown)+'</title></circle>');
+      if(!historical)parts.push('<text data-cnnon-endlabel="'+kind+'" x="'+Math.min(864,X(config.week)+8).toFixed(1)+'" y="'+(Y(v)+(kind==='china'?-11:15)).toFixed(1)+'" font-size="12" font-weight="700" fill="'+color+'">'+shown+'</text>');
+    }
+    series.push({year,kind,key,color,dash,now:!historical,points:r});
+    legends.push({year,kind,color,dash,now:!historical,missing:!selected});
+  }
  }
- const step=maxWeek<=12?1:maxWeek<=24?2:maxWeek<=42?5:8;
- const weekTicks=[1];for(let w=1+step;w<=maxWeek;w+=step)weekTicks.push(w);
- if(weekTicks.at(-1)!==maxWeek)weekTicks.push(maxWeek);
- for(const w of weekTicks){
-   const x=X(w);
-   parts.push('<text x="'+x.toFixed(2)+'" y="278" text-anchor="middle" font-size="10.5" fill="'+(w===config.week?'#193650':'#8392a2')+'" font-weight="'+(w===config.week?'700':'500')+'">'+w+'</text>');
- }
- parts.push('<text x="450" y="302" text-anchor="middle" font-size="10.5" fill="#64748b">Semana do ano comercial (MY)</text>');
- const selectedX=X(config.week);
- parts.push('<line data-cnnon-selected-week="1" x1="'+selectedX.toFixed(2)+'" y1="'+box.y0+'" x2="'+selectedX.toFixed(2)+'" y2="'+box.y1+'" stroke="#92a4b3" stroke-width="1.3" stroke-dasharray="3 6"/>');
- const series=[],legends=[];
- for(const year of selectedYears){
-   const historical=year!==cur,idx=yy.filter(y=>y!==cur).indexOf(year),dash=historical?histDash[idx%histDash.length]:'';
-   const source=rows(year).filter(p=>!p.missing&&p.week<=config.week);
-   for(const [kind,key,color] of [['china',keys[0],NAVY],['other',keys[1],TEAL]]){
-     let segments=[],seg=[],lastWeek=null;
-     const flush=()=>{if(seg.length>1)segments.push(seg);seg=[]};
-     for(const p of source){if(lastWeek!==null&&p.week-lastWeek>1)flush();seg.push(p);lastWeek=p.week;}
-     flush();
-     const width=historical?2.5:4.2,opacity=historical?0.75:1;
-     for(const block of segments){
-       const d=block.map((p,i)=>(i?'L':'M')+X(p.week).toFixed(2)+' '+Y(toValue(p,key)).toFixed(2)).join(' ');
-       parts.push('<path data-cnnon-series="'+year+'-'+kind+'" d="'+d+'" fill="none" stroke="'+color+'" stroke-width="'+width+'" stroke-opacity="'+opacity+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none"/>');
-     }
-     if(source.length===1){const p=source[0];parts.push('<circle cx="'+X(p.week).toFixed(2)+'" cy="'+Y(toValue(p,key)).toFixed(2)+'" r="3" fill="'+color+'"/>');}
-     const at=source.find(p=>p.week===config.week)||null;
-     if(at){
-       const v=toValue(at,key),shown=fmt(v)+(config.mode==='share'?'%':' Mi t');
-       parts.push('<circle data-cnnon-point="'+year+'-'+kind+'" cx="'+X(at.week).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="'+(historical?'4':'5.6')+'" fill="#fff" stroke="'+color+'" stroke-width="'+(historical?'2':'3')+'"><title>'+esc(label(year)+' · '+(kind==='china'?'China':'Não-China')+' · '+shown)+'</title></circle>');
-       if(!historical){
-         // Label at the current endpoint, with an opaque backing for readability.
-         const text=kind==='china'?'China':'Não-China';
-         const wText=(text.length+shown.length)*6.3+22;
-         const right=X(at.week)+wText+10<=897,tx=right?X(at.week)+9:X(at.week)-9;
-         const baseY=Math.min(box.y1-9,Math.max(box.y0+14,Y(v)+(kind==='china'?-14:20)));
-         const rx=right?tx-4:tx-wText+4;
-         parts.push('<rect x="'+rx.toFixed(2)+'" y="'+(baseY-12).toFixed(2)+'" width="'+wText.toFixed(2)+'" height="19" rx="6" fill="#fff" fill-opacity=".94" stroke="#edf1f4"/>');
-         parts.push('<text data-cnnon-endlabel="'+kind+'" x="'+tx.toFixed(2)+'" y="'+(baseY+1).toFixed(2)+'" text-anchor="'+(right?'start':'end')+'" font-size="11" font-weight="800" fill="'+color+'">'+text+' · '+shown+'</text>');
-       }
-     }
-     series.push({year,kind,key,color,dash,now:!historical,points:source});
-     legends.push({year,kind,color,dash,now:!historical,missing:!at});
-   }
- }
- // Crosshair overlays are updated in place; they never change the underlying data.
- parts.push('<g data-cnnon-hover-layer="1" visibility="hidden" pointer-events="none">');
- parts.push('<line data-cnnon-crosshair-x="1" x1="0" y1="'+box.y0+'" x2="0" y2="'+box.y1+'" stroke="#536779" stroke-width="1.5" stroke-dasharray="4 4"/>');
- parts.push('<line data-cnnon-crosshair-y="1" x1="'+box.x0+'" y1="0" x2="'+box.x1+'" y2="0" stroke="#98a8b5" stroke-width="1" stroke-dasharray="3 6"/>');
- parts.push('<g data-cnnon-hover-markers="1"></g></g></svg>');
- return {svg:parts.join(''),legends,years:selectedYears,at:Object.fromEntries(selectedYears.map(y=>[y,seriesAt(y,config.week)])),
-   series,box,X,Y,toValue,
-   hoverWeeks:[...new Set(all.map(p=>p.week))].sort((a,b)=>a-b)};
+ parts.push('<g data-cnnon-hover-layer="1" visibility="hidden" pointer-events="none"><line data-cnnon-crosshair-x="1" x1="0" y1="'+box.y0+'" x2="0" y2="'+box.y1+'" stroke="#536779" stroke-width="1.1" stroke-dasharray="4 4"/><line data-cnnon-crosshair-y="1" x1="'+box.x0+'" y1="0" x2="'+box.x1+'" y2="0" stroke="#a6b4bf" stroke-width="1" stroke-dasharray="3 6"/><g data-cnnon-hover-markers="1"></g></g>');
+ parts.push('</svg>');
+ return {svg:parts.join(''),legends,years:sorted,at:Object.fromEntries(sorted.map(y=>[y,seriesAt(y,config.week)])),
+  series,box,X,Y,toValue,hoverWeeks:[...new Set(all.map(p=>p.week))].sort((a,b)=>a-b)};
 }
 function attachHover(chart,graph,config){
  const svg=chart.querySelector('svg[data-cnnon-graph]');if(!svg)return;
@@ -208,9 +179,9 @@ function build(com,c,saved){
  const base=defaultConfig(),config=fromSnapshot(saved,base);
  const el=document.createElement('div');
  el.className='p-card cnnon-card';el.dataset.card=CARD;el.style.gridColumn='1 / -1';
- el.style.minWidth='0';el.style.height='auto';el.style.minHeight='555px';
- if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';el.style.height='auto';el.style.minHeight='555px';}
- el.innerHTML='<div class="p-card-h"><div><div class="p-card-t etext">'+c.t+'</div><div class="p-card-s etext">'+c.s+'</div></div><div class="cardtools"><div class="selrow" data-cnnon-controls="1" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"></div><div class="pal"></div></div></div><div class="china-year-controls"><strong>Comparar MY</strong></div><div class="chart cnnon-chart" title="Passe o mouse sobre as linhas para consultar qualquer semana"></div><div class="china-metrics" style="padding:2px 15px 9px"></div><div class="lg china-legend" style="display:flex;flex-wrap:wrap;column-gap:16px;row-gap:5px;padding:2px 14px 12px;font-size:11px"></div><div class="foot"><span class="etext">Fonte: USDA/FAS ESR · China / Não-China identificado / UNKNOWN</span><span class="etext">Mi t · Share</span></div>';
+ el.style.minWidth='0';el.style.height='auto';el.style.minHeight='455px';
+ if(config.style){el.style.cssText=config.style;el.style.gridColumn='1 / -1';el.style.height='auto';el.style.minHeight='455px';}
+ el.innerHTML='<div class="p-card-h"><div><div class="p-card-t etext">'+c.t+'</div><div class="p-card-s etext">'+c.s+'</div></div><div class="cardtools"><div class="selrow" data-cnnon-controls="1" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px"></div><div class="pal"></div></div></div><div class="china-year-controls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 15px 1px;font-size:11px"><strong>Comparar MY:</strong></div><div class="chart cnnon-chart" title="Passe o mouse ou use as setas sobre o gráfico" style="padding:4px 8px 0;min-height:240px"></div><div class="china-metrics" style="padding:2px 15px 9px"></div><div class="lg china-legend" style="display:flex;flex-wrap:wrap;column-gap:16px;row-gap:5px;padding:2px 14px 12px;font-size:11px"></div><div class="foot"><span class="etext">Fonte: USDA/FAS ESR · China / Não-China identificado / UNKNOWN</span><span class="etext">Mi t · Share</span></div>';
  const title=el.querySelector('.p-card-t'),sub=el.querySelector('.p-card-s');
  if(config.title&&config.title!==c.t)title.textContent=config.title;
  if(config.sub&&config.sub!==c.s)sub.textContent=config.sub;
@@ -230,9 +201,8 @@ function build(com,c,saved){
   if(cb.checked)cb.setAttribute('checked','');
   lab.appendChild(cb);lab.appendChild(document.createTextNode(label(y)));yearbar.appendChild(lab);
  }
- const quickLast=document.createElement('button');quickLast.type='button';quickLast.className='cnnon-quick';quickLast.dataset.cnnonPreset='last';quickLast.textContent='Atual + anterior';quickLast.title='Manter apenas as safras atual e anterior';
- const quickClear=document.createElement('button');quickClear.type='button';quickClear.className='cnnon-quick';quickClear.dataset.cnnonPreset='clear';quickClear.textContent='Limpar anos';quickClear.title='Exibir apenas o MY vigente';
- yearbar.append(quickLast,quickClear);
+ const preset=(kind)=>{const latest=years().at(-1);config.compare=kind==='last'?[latest-1].filter(y=>years().includes(y)):[];yearbar.querySelectorAll('input[data-compare-year]').forEach(cb=>{cb.checked=config.compare.includes(Number(cb.dataset.compareYear));});draw();};
+ for(const [kind,txt] of [['last','Atual + anterior'],['clear','Limpar anos']]){const b=document.createElement('button');b.type='button';b.className='cnnon-quick';b.dataset.cnnonPreset=kind;b.textContent=txt;b.title=kind==='last'?'Comparar somente as duas últimas safras':'Mostrar somente a safra atual';b.onclick=()=>preset(kind);yearbar.appendChild(b);}
  const pal=el.querySelector('.pal');
  const reset=document.createElement('button');reset.className='mini rst';reset.style.display='inline-block';reset.textContent='↺';reset.title='Reiniciar comparação e filtros';
  const png=document.createElement('button');png.className='mini png';png.textContent='⤓';png.title='Exportar gráfico PNG';
@@ -243,45 +213,28 @@ function build(com,c,saved){
  };
  const draw=()=>{
   const graph=graphic(config);
-  const chart=el.querySelector('.chart');chart.innerHTML=graph.svg;
+  el.querySelector('.chart').innerHTML=graph.svg;
   const lg=el.querySelector('.china-legend');lg.innerHTML='';
   for(const l of graph.legends){
-   const sp=document.createElement('span');sp.className='cnnon-legend-entry'+(l.now?' current':'');
-   sp.title=(l.now?'Safra atual — linha sólida':'Histórico — traço '+(l.dash||'contínuo'));
-   sp.innerHTML='<svg width="42" height="11" viewBox="0 0 42 11" aria-hidden="true"><line x1="1" y1="5.5" x2="41" y2="5.5" stroke="'+l.color+'" stroke-width="'+(l.now?'4':'2.8')+'"'+(l.dash?' stroke-dasharray="'+l.dash+'"':'')+' stroke-linecap="round" /></svg><b>'+label(l.year)+' · '+(l.kind==='china'?'China':'Não-China')+'</b>'+(l.missing?' <span class="cnnon-no-read">s/d</span>':'');
+   const sp=document.createElement('span');sp.style.cssText='display:inline-flex;gap:5px;align-items:center;color:#344054';
+   sp.innerHTML='<svg width="24" height="9" viewBox="0 0 24 9"><line x1="1" y1="4.5" x2="23" y2="4.5" stroke="'+l.color+'" stroke-width="'+(l.now?'3':'2')+'"'+(l.dash?' stroke-dasharray="'+l.dash+'"':'')+' /></svg><b>'+label(l.year)+' '+(l.kind==='china'?'China':'Não-China')+'</b>'+(l.missing?' <span style="opacity:.5">—</span>':'');
    lg.appendChild(sp);
   }
   const metrics=el.querySelector('.china-metrics'),current=graph.at[lastYear];
-  const prev=graph.at[lastYear-1]||null;
-  const pctDelta=(k)=>current&&prev?(current[k+'Pct']-prev[k+'Pct']):null;
-  const volDelta=(k)=>current&&prev?(current[k]-prev[k])/1000:null;
-  const signed=(v,suffix,precision=1)=>v==null?'s/d':(v>0?'+':'')+new Intl.NumberFormat('pt-BR',{minimumFractionDigits:precision,maximumFractionDigits:precision}).format(v)+suffix;
-  const metric=(key,name,color)=>{
-    const value=current?(config.mode==='share'?fmt(current[key+'Pct'])+'%':fmt(current[key]/1000)+' Mi t'):'s/d';
-    const delta=config.mode==='share'?signed(pctDelta(key),' p.p.'):signed(volDelta(key),' Mi t');
-    const changed=(config.mode==='share'?pctDelta(key):volDelta(key));
-    return '<div class="cnnon-kpi"><div class="cnnon-kpi-head"><i style="background:'+color+'"></i>'+name+'</div><b>'+value+'</b><small>vs '+label(lastYear-1)+': <span class="'+(changed==null?'':changed>=0?'positive':'negative')+'">'+delta+'</span></small></div>';
+  const line=(y,d)=>{
+   if(!d)return '<span style="color:#64748b">'+label(y)+': sem leitura completa na sem. '+config.week+'</span>';
+   const value=(k)=>fmt(config.mode==='share'?d[k+'Pct']:d[k]/1000)+(config.mode==='share'?'%':' Mi t');
+   return '<b>'+label(y)+'</b> · China <b style="color:'+NAVY+'">'+value('china')+'</b> · Não-China <b style="color:'+TEAL+'">'+value('other')+'</b> · UNKNOWN '+fmt(d.unknown/1000)+' Mi t';
   };
-  const remaining=current?'<div class="cnnon-kpi"><div class="cnnon-kpi-head"><i style="background:#a5b3bf"></i>UNKNOWN</div><b>'+fmt(current.unknown/1000)+' Mi t</b><small>'+fmt(current.unknownPct)+'% do commitment</small></div>':'';
-  metrics.innerHTML='<div class="cnnon-kpi-heading"><strong>Semana '+config.week+' · MY '+label(lastYear)+'</strong><span>'+(config.mode==='share'?'Participação no total · evolução em pontos percentuais':'Commitment acumulado · evolução em Mi t')+'</span></div>'+
-   '<div class="cnnon-kpis">'+metric('china','China',NAVY)+metric('other','Não-China',TEAL)+remaining+'</div>'+
-   '<p class="cnnon-footnote">Não-China = MUNDO − China − UNKNOWN. Share (%) considera o commitment MUNDO, inclusive UNKNOWN. Lacunas históricas não são interpoladas.</p>';
+  metrics.innerHTML='<div style="font-size:12px;line-height:1.6">'+line(lastYear,current)+'</div><div style="font-size:10px;color:#667085;margin-top:3px">Não-China = MUNDO − China − UNKNOWN. Share (%) = respectivo destino ÷ commitment MUNDO. UNKNOWN é mantido fora das duas linhas; lacunas no histórico não são preenchidas.</div>';
   sync();
   if(typeof window.wmFix==='function')window.wmFix(el);
   if(window.BRZFIT)window.BRZFIT(el);
-  attachHover(chart,graph,config);
+  attachHover(el.querySelector('.cnnon-chart'),graph,config);
  };
  wk.onchange=()=>{config.week=Number(wk.value);draw();};
  mode.onchange=()=>{config.mode=mode.value;draw();};
  yearbar.onchange=()=>{config.compare=[...yearbar.querySelectorAll('input:checked')].map(x=>Number(x.dataset.compareYear));draw();};
- const quickPreset=which=>{
-   const latest=years().at(-1);
-   config.compare=which==='last'?[latest-1].filter(y=>years().includes(y)):[];
-   yearbar.querySelectorAll('input[data-compare-year]').forEach(cb=>{cb.checked=config.compare.includes(Number(cb.dataset.compareYear));});
-   draw();
- };
- quickLast.onclick=()=>quickPreset('last');
- quickClear.onclick=()=>quickPreset('clear');
  reset.onclick=()=>{const d=defaultConfig();config.week=d.week;config.mode=d.mode;config.compare=d.compare;wk.value=String(config.week);mode.value=config.mode;yearbar.querySelectorAll('input').forEach(cb=>cb.checked=config.compare.includes(Number(cb.dataset.compareYear)));draw();};
  png.onclick=()=>{if(typeof window.baixar==='function')window.baixar(el,'soja_china_nao_china_semana_'+config.week,920,490);};
  el._getWeek=()=>config.week;el._getMode=()=>config.mode;el._draw=draw;
@@ -289,11 +242,12 @@ function build(com,c,saved){
  el._rebuild=()=>{const newer=build(com,c,null);el.replaceWith(newer);};
  draw();return el;
 }
-/* Estilos isolados; exportarHTML inclui a folha embutida. */
-const cssId='brz-cnnon-e100-style';
+
+/* e101: design e99 restaurado; ferramentas da e100 mantidas. */
+const cssId='brz-cnnon-e101-style';
 if(!document.getElementById(cssId)){
  const style=document.createElement('style');style.id=cssId;
- style.textContent="\n.cnnon-card{border:1px solid #dce5eb!important;box-shadow:0 9px 26px rgba(20,45,65,.07)!important;background:#fff!important;overflow:visible}\n.cnnon-card .p-card-h{padding:7px 6px 9px;border-bottom:1px solid #edf1f4;flex-wrap:wrap;align-items:center}\n.cnnon-card .p-card-t{font-size:14px;font-weight:800;letter-spacing:-.25px}\n.cnnon-card .p-card-s{font-size:10px;color:#546779;margin-top:3px}\n.cnnon-card .selrow{gap:7px!important}\n.cnnon-card .selp{font-weight:700;font-size:11px;border-radius:6px;border:1px solid #d3dee6;background:#f8fafb;color:#1c374d;padding:5px 6px}\n.cnnon-card .mini{width:26px;height:26px;border-color:#d6e0e8;border-radius:6px;font-size:14px}\n.cnnon-card .china-year-controls{padding:10px 7px 9px;display:flex;align-items:center;gap:7px 9px;flex-wrap:wrap;font-size:11px;border-bottom:1px solid #eef2f4}\n.cnnon-card .china-year-controls strong{margin-right:3px;color:#34485c;letter-spacing:.1px}\n.cnnon-card .china-year-controls label{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;background:#f8fafb;border:1px solid #e3eaf0;border-radius:7px;font-weight:700;color:#3c5366;user-select:none}\n.cnnon-card .china-year-controls label:hover{background:#eef5f7;border-color:#afc8d2}\n.cnnon-card input[data-compare-year]{accent-color:#0D9488;width:13px;height:13px;margin:0}\n.cnnon-quick{padding:5px 8px;background:#fff;border:1px solid #c8d8e1;border-radius:6px;color:#27485e;font-size:10px;cursor:pointer;font-weight:800;white-space:nowrap}\n.cnnon-quick:hover{background:#e9f4f4;border-color:#76b2b0}\n.cnnon-chart{position:relative;padding:11px 8px 3px!important;min-height:295px!important;cursor:crosshair;overflow:visible}\n.cnnon-chart svg[data-cnnon-graph]{height:auto!important;width:100%!important;aspect-ratio:900/315;max-height:410px;display:block;border-radius:9px;touch-action:pan-y}\n.cnnon-chart svg[data-cnnon-graph]:focus-visible{outline:2px solid #0D9488;outline-offset:1px}\n.cnnon-tooltip{position:absolute;z-index:50;pointer-events:none;width:min(345px,calc(100% - 18px));padding:0;background:rgba(255,255,255,.99);border:1px solid #cbd9e3;border-radius:10px;box-shadow:0 12px 38px rgba(14,40,59,.18);font-size:11px;color:#223c50;overflow:hidden;max-height:350px}\n.cnnon-tooltip[hidden]{display:none!important}\n.cnnon-tt-head{background:#eff4f7;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #dee8ed}\n.cnnon-tt-head b{font-size:12px;color:#183c56}\n.cnnon-tt-head span{font-size:9px;color:#61788b;font-weight:700}\n.cnnon-tt-content{max-height:300px;overflow-y:auto}\n.cnnon-tt-row{padding:9px 12px;border-top:1px solid #e9eef1}\n.cnnon-tt-row:first-child{border-top:none}\n.cnnon-tt-row.current{background:#f5faf9}\n.cnnon-tt-year{display:flex;align-items:center;gap:7px;color:#233b4e;font-weight:800;margin-bottom:6px}\n.cnnon-tt-year small{border-radius:12px;background:#d7f0eb;color:#0a7269;font-size:9px;padding:2px 6px}\n.cnnon-tt-item{display:grid;grid-template-columns:8px 70px 1fr auto;align-items:center;gap:8px;margin-top:3px;font-size:11px}\n.cnnon-tt-item i{width:7px;height:7px;border-radius:100%}\n.cnnon-tt-item i.navy{background:#1A3A5C}.cnnon-tt-item i.teal{background:#0D9488}\n.cnnon-tt-item b{font-weight:800;text-align:right;white-space:nowrap}\n.cnnon-tt-item small{font-size:10px;text-align:right;color:#657d8f;width:42px}\n.cnnon-tt-low{font-size:9.5px;color:#708294;margin-top:7px}\n.cnnon-tt-row.missing{display:flex;align-items:center;justify-content:space-between;color:#8696a2}\n.cnnon-card .china-metrics{padding:4px 8px 8px!important}\n.cnnon-kpi-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px;color:#465d6d;font-size:10px}\n.cnnon-kpi-heading strong{font-size:11px;color:#223e52}\n.cnnon-kpi-heading span{color:#758796}\n.cnnon-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}\n.cnnon-kpi{padding:11px 12px;background:linear-gradient(160deg,#fff,#f7fafb);border:1px solid #e4ecf1;border-radius:9px;display:flex;flex-direction:column;gap:5px}\n.cnnon-kpi-head{display:flex;align-items:center;gap:7px;font-size:10.5px;color:#435b70;font-weight:800}\n.cnnon-kpi-head i{width:11px;height:4px;border-radius:3px}\n.cnnon-kpi>b{font-size:19px;font-weight:850;letter-spacing:-.4px;color:#1f3445}\n.cnnon-kpi small{font-size:10px;color:#6c7f8f;font-weight:600}\n.cnnon-kpi .positive{color:#087b68}.cnnon-kpi .negative{color:#a24c4c}\n.cnnon-footnote{margin:9px 2px 0;font-size:9.4px;color:#718395;line-height:1.45}\n.cnnon-card .china-legend{display:flex;gap:7px 10px!important;padding:7px 8px 8px!important;border-top:1px solid #eef2f5}\n.cnnon-legend-entry{display:inline-flex!important;align-items:center;gap:6px!important;padding:4px 7px;border:1px solid #edf1f4;background:#fcfdfe;border-radius:6px;white-space:nowrap}\n.cnnon-legend-entry.current{background:#f1f8f8;border-color:#cfe9e6}\n.cnnon-legend-entry b{font-size:10px;font-weight:800;color:#3c5163}\n.cnnon-no-read{font-size:9px;color:#94a3af;font-weight:600}\n.cnnon-card .foot{font-size:9px!important;color:#677b8c!important;margin:3px 6px 1px;line-height:1.3;flex-wrap:wrap}\n@media(max-width:720px){\n .cnnon-card .p-card-h{gap:10px}\n .cnnon-card .p-card-t{font-size:13px}\n .cnnon-card .china-year-controls{gap:6px;padding:8px 2px}\n .cnnon-chart{min-height:248px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:thin}\n .cnnon-chart svg[data-cnnon-graph]{min-width:660px;width:660px!important;height:236px!important;max-height:236px}\n .cnnon-tooltip{width:298px;max-height:255px;position:sticky;left:8px!important;bottom:5px;top:auto!important;max-width:calc(100% - 16px)}\n .cnnon-tt-content{max-height:202px}\n .cnnon-kpis{gap:6px;grid-template-columns:repeat(2,minmax(0,1fr))}\n .cnnon-kpi:last-child{grid-column:1 / -1}\n .cnnon-kpi{padding:9px}\n .cnnon-kpi>b{font-size:16px}\n .cnnon-legend-entry b{font-size:9px}\n}";
+ style.textContent="\n.cnnon-card{overflow:visible}\n.cnnon-card .china-year-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:5px 15px 2px;font-size:11px}\n.cnnon-quick{background:transparent;border:1px solid #d6e0e7;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:600;color:#475d70;cursor:pointer}\n.cnnon-quick:hover{background:#f1f6f6}\n.cnnon-chart{position:relative;overflow:visible;min-height:245px!important}\n.cnnon-chart svg[data-cnnon-graph]{display:block;width:100%;height:auto;max-height:280px;cursor:crosshair;touch-action:pan-y}\n.cnnon-chart svg[data-cnnon-graph]:focus-visible{outline:2px solid #0D9488;outline-offset:1px}\n.cnnon-tooltip{position:absolute;z-index:50;pointer-events:none;width:min(315px,calc(100% - 16px));background:rgba(255,255,255,.99);border:1px solid #cbd9e3;border-radius:8px;box-shadow:0 8px 26px rgba(14,40,59,.16);font-size:11px;color:#223c50;overflow:hidden;max-height:340px}\n.cnnon-tooltip[hidden]{display:none!important}\n.cnnon-tt-head{background:#eff4f7;padding:8px 10px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #dee8ed}\n.cnnon-tt-head b{font-size:12px;color:#183c56}.cnnon-tt-head span{font-size:9px;color:#61788b;font-weight:700}\n.cnnon-tt-content{max-height:280px;overflow-y:auto}\n.cnnon-tt-row{padding:8px 10px;border-top:1px solid #e9eef1}.cnnon-tt-row:first-child{border-top:none}\n.cnnon-tt-row.current{background:#f5faf9}.cnnon-tt-year{display:flex;align-items:center;gap:7px;color:#233b4e;font-weight:800;margin-bottom:5px}\n.cnnon-tt-year small{border-radius:12px;background:#d7f0eb;color:#0a7269;font-size:9px;padding:2px 6px}\n.cnnon-tt-item{display:grid;grid-template-columns:7px 62px 1fr auto;align-items:center;gap:7px;margin-top:3px;font-size:10.5px}\n.cnnon-tt-item i{width:7px;height:7px;border-radius:100%}.cnnon-tt-item i.navy{background:#1A3A5C}.cnnon-tt-item i.teal{background:#0D9488}\n.cnnon-tt-item b{font-weight:800;text-align:right;white-space:nowrap}.cnnon-tt-item small{font-size:9.5px;text-align:right;color:#657d8f;width:42px}\n.cnnon-tt-low{font-size:9px;color:#708294;margin-top:6px}.cnnon-tt-row.missing{display:flex;justify-content:space-between;color:#8696a2}\n@media(max-width:720px){\n.cnnon-chart{overflow-x:auto!important;overflow-y:hidden!important;min-height:225px!important}\n.cnnon-chart svg[data-cnnon-graph]{min-width:650px;width:650px!important;height:210px;max-height:210px}\n.cnnon-tooltip{position:sticky;left:6px!important;top:auto!important;bottom:4px;max-width:calc(100% - 12px);max-height:245px}\n.cnnon-tt-content{max-height:196px}\n}";
  document.head.appendChild(style);
 }
 window.BRZChinaNonChina={build,revive:(el,com,c)=>{const sv={html:el.innerHTML,style:el.getAttribute('style'),sourceDataAtual:window.E.meta.atual};const newer=build(com,c,sv);el.replaceWith(newer);return newer;},rows,seriesAt,graphic,defaultConfig};

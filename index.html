@@ -125,12 +125,13 @@
     "vendas_estimativas": "E.deep.vendEst[<data ISO>] aceita cy:[min,max], nc:[min,max] e comb:[min,max] por commodity. __combined:true continua válido quando TODAS as commodities vêm apenas com faixa total. O modo misto permite split em algumas linhas e comb em outras; comb ocupa Corrente/Total* e Nova fica em travessão. A tabela usa rótulos semânticos Corrente/Nova porque trigo, soja/milho e farelo/óleo viram o MY em datas diferentes. O comentário compara corrente+nova contra comb. As células seguem contenteditable e _vendRestore preserva edições. Nunca inventar split por safra."
   },
   "last_build": {
-    "id": "e100",
+    "id": "e101",
     "data": "2026-11-11",
     "hash_prefix": "sha256[:16] informado na entrega",
-    "resumo": "Refino visual e interativo do gráfico soja China versus não-China: eixos ajustáveis à semana X, linhas por MY com traços e opacidades distintivos, crosshair horizontal/vertical, hover contextual com China/não-China/UNKNOWN e share, labels finais, KPIs comparados, presets e mobile. Séries USDA/FAS, WASDE, senha e demais gráficos intactos."
+    "resumo": "Gráfico soja China versus não-China restaurado ao desenho compacto da e99 com duas cores, históricos tracejados e hover/crosshair/tooltip da e100. Removidos KPIs e novo layout. Séries USDA/FAS, WASDE, senha e demais gráficos intactos."
   },
   "build_log": [
+    "e101 (11Nov): restauração visual e99 e card compacto do gráfico de soja China/não-China, com tooltip/crosshair, teclado e comparador mantidos; sem alterações em dados oficiais, outros cards e senha.",
     "e100 (11Nov): melhoria de design e interatividade do gráfico soja China/Não-China, tooltip com dados por semana e safra, crosshair, traços históricos mais distintos, etiquetas de ponta, cabeçalho/resumo comparativo e atalhos de seleção. Histórico e demais painéis sem modificação.",
     "e99 (11Nov): gráfico exclusivo soja China x Não-China, linhas de commitment acumulado por semana e comparadores multissafras; métricas volume/share. UNKNOWN é residual independente (MUNDO − China − UNKNOWN); sem imputação de faltantes nem alteração em dados FAS/WASDE ou demais telas.",
     "e98 (10Nov): WASDE-677 atualizado historicamente em cinco commodities; soja exportações +25 Mi bu, milho -25 Mi bu, trigo/farelo/óleo estáveis; percentuais e séries derivadas recalculados. Base FAS e expectativas de 29/10 congeladas e auditadas; senha/personalizações intactas.",
