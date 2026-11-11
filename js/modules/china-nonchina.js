@@ -118,7 +118,7 @@ function build(com,c,saved){
   lab.appendChild(cb);lab.appendChild(document.createTextNode(label(y)));yearbar.appendChild(lab);
  }
  const pal=el.querySelector('.pal');
- const reset=document.createElement('button');reset.className='mini rst';reset.textContent='↺';reset.title='Reiniciar comparação e filtros';
+ const reset=document.createElement('button');reset.className='mini rst';reset.style.display='inline-block';reset.textContent='↺';reset.title='Reiniciar comparação e filtros';
  const png=document.createElement('button');png.className='mini png';png.textContent='⤓';png.title='Exportar gráfico PNG';
  pal.append(reset,png);
  const sync=()=>{
