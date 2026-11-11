@@ -125,12 +125,13 @@
     "vendas_estimativas": "E.deep.vendEst[<data ISO>] aceita cy:[min,max], nc:[min,max] e comb:[min,max] por commodity. __combined:true continua válido quando TODAS as commodities vêm apenas com faixa total. O modo misto permite split em algumas linhas e comb em outras; comb ocupa Corrente/Total* e Nova fica em travessão. A tabela usa rótulos semânticos Corrente/Nova porque trigo, soja/milho e farelo/óleo viram o MY em datas diferentes. O comentário compara corrente+nova contra comb. As células seguem contenteditable e _vendRestore preserva edições. Nunca inventar split por safra."
   },
   "last_build": {
-    "id": "e99",
+    "id": "e100",
     "data": "2026-11-11",
     "hash_prefix": "sha256[:16] informado na entrega",
-    "resumo": "Novo gráfico amplo de soja: China vs destinos não-China identificados, curvas semanais de commitment, overlays multiano por MY, modos Mi t / share (%) e UNKNOWN separado. Dados USDA/FAS e WASDE intactos, personalizações e senha preservadas."
+    "resumo": "Refino visual e interativo do gráfico soja China versus não-China: eixos ajustáveis à semana X, linhas por MY com traços e opacidades distintivos, crosshair horizontal/vertical, hover contextual com China/não-China/UNKNOWN e share, labels finais, KPIs comparados, presets e mobile. Séries USDA/FAS, WASDE, senha e demais gráficos intactos."
   },
   "build_log": [
+    "e100 (11Nov): melhoria de design e interatividade do gráfico soja China/Não-China, tooltip com dados por semana e safra, crosshair, traços históricos mais distintos, etiquetas de ponta, cabeçalho/resumo comparativo e atalhos de seleção. Histórico e demais painéis sem modificação.",
     "e99 (11Nov): gráfico exclusivo soja China x Não-China, linhas de commitment acumulado por semana e comparadores multissafras; métricas volume/share. UNKNOWN é residual independente (MUNDO − China − UNKNOWN); sem imputação de faltantes nem alteração em dados FAS/WASDE ou demais telas.",
     "e98 (10Nov): WASDE-677 atualizado historicamente em cinco commodities; soja exportações +25 Mi bu, milho -25 Mi bu, trigo/farelo/óleo estáveis; percentuais e séries derivadas recalculados. Base FAS e expectativas de 29/10 congeladas e auditadas; senha/personalizações intactas.",
     "e97 (05Nov): corrige seleção semanal congelada em snapshots históricos: ao migrar e75/e95/e96, o gráfico usa a semana CWR atual (soja/milho 9, trigo 22, farelo/óleo 5); preserva país, MY, títulos, legendas e paleta. Sem alteração nos dados USDA ou senha.",
@@ -198,7 +199,7 @@
     "[LAYOUT] e68 restaurou grupos por safra; se consenso combinado se repetir, preservá-lo como faixa conjunta mesmo com colunas MY explícitas. NÃO dividir sem fonte.",
     "[CONSENSO 27/28] Verificar faixas desagregadas ao receber fonte específica. Em 01/10/2026 só há faixa combinada confirmada, por isso n/d na coluna da safra seguinte. Não substituir por zero nem por range conjectural."
   ],
-  "latest_build": "e99 · 11Nov",
+  "latest_build": "e100 · 11Nov",
   "pending_2026_10_22": "CONCLUÍDO: Weekly Highlights de 22/10 recebido e switched Unknown→China=255 kt validado. Weekly Highlights 15/10 segue pendente.",
   "padrao_brz_safra": {
     "modelo": "BRZ SAFRA s32 (04/11/2026)",
@@ -218,7 +219,7 @@
 <header class="topnav">
   <div class="brand"><b>BRZ</b><span>Exportações Americanas · USDA ESR</span></div>
   <nav class="topmenu" id="topmenu"><button data-go="scr-menu" class="active">Inicial</button><button data-go="scr-soja" class="">Soja</button><button data-go="scr-farelo">Farelo de soja</button><button data-go="scr-oleo">Óleo de soja</button><button data-go="scr-milho">Milho</button><button data-go="scr-trigo">Trigo</button><button data-go="scr-vendas">Vendas Semanais</button><button data-go="scr-base">Base</button><button data-go="scr-opcoes" class="">Opções</button></nav>
-  <span class="hint" id="dt">dados até 29/out/2026 · release 05/11 · WASDE 10/11/26 · e99 · 11Nov</span>
+  <span class="hint" id="dt">dados até 29/out/2026 · release 05/11 · WASDE 10/11/26 · e100 · 11Nov</span>
 <button id="gear" title="Ativar/desativar modo edição" class="">⚙ Edição</button>
   <div class="lang-switch" id="lang-switch" role="group" aria-label="Idioma">
     <button type="button" class="active" data-lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil)" aria-pressed="true">
