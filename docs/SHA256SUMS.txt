@@ -47,7 +47,7 @@ f2c997dabb362e349680d2718621a3a75ef379c1d11533d39bffdfb9a84f5bdb  ./docs/MIGRATI
 8724c131acc3feabdc298d62f059f8d40be9e46368539b4206b46dbaa721629e  ./js/core/gate-handler.js
 5ed408904fe9aba90f913f9444109f3d09079cd0da7e2ebe9d6ac053580c985c  ./js/core/i18n.js
 7c033a7cacd6b0ffad7bdc53462f133b0a11e4ecf36be94dc1ae88593cb2472f  ./js/modules/base-export.js
-ab9cc60fff372df492eebe41bbb6af21eb57d065f74ba49bd5688f42f5ec5002  ./js/modules/china-nonchina.js
+bbfaefb1156f5dbdc3e491755fff70e82b7c62b5271087fbf222527e3fe03bba  ./js/modules/china-nonchina.js
 8ff800a00706bcc1d6ef7e09e5c55903a601270f3c6bbe7298bee12b8ef9d4ad  ./js/modules/quadro.js
 fe43060a264619cef8711b04b1757e3fd46e559b12cb7809351d17a4eeabb1fe  ./js/modules/vendas-en.js
 a6f7b88c1a00d661cb937f89a16b004dfe556074a582109f7ad31c85b54d536f  ./js/utils/excel-writer.js
