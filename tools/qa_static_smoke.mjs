@@ -137,6 +137,7 @@ assert.equal(await history.getAttribute('stroke-width'),'2.5','linha histórica 
 assert((await history.getAttribute('stroke-dasharray')).length>0,'linha histórica tracejada');
 assert.equal(await compareCard.locator('line[data-cnnon-selected-week]').count(),1,'indicador da semana X');
 const svgHover=compareCard.locator('svg[data-cnnon-graph]');
+await svgHover.scrollIntoViewIfNeeded(); // o card está abaixo da dobra na aba Soja
 const hoverRect=await svgHover.boundingBox();
 assert(hoverRect&&hoverRect.width>500,'área SVG de leitura');
 const pointerX=w=>hoverRect.x+(62+(w-1)/8*773)/900*hoverRect.width;
