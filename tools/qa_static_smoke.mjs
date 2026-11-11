@@ -150,6 +150,8 @@ await restored.locator('.mini.rst').click();
 assert.equal(await restored.locator('select[data-role="metric"]').inputValue(),'volume','reset de metric');
 assert.equal(await restored.locator('input[data-compare-year="2024"]').isChecked(),false,'reset de ano');
 const soyCard=page.locator('[data-card="netsafra|soja"]');
+// Um cartão antigo pode preservar seleção manual nesta build; exercer explicitamente a semana corrente antes do teste.
+await soyCard.locator('select[data-role="week"]').selectOption('9');
 assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'9');
 await soyCard.locator('select[data-role="week"]').selectOption('7');
 assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'7','navegação histórica manual preservada');
