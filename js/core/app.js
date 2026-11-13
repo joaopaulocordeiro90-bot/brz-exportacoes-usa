@@ -2626,14 +2626,34 @@ window.gerarVendTexto=function(card){
   // Complemento oficial do Highlights: net sales China incluem switched, não vendas incrementais.
   const hi=(E.deep.weeklyHighlights||{})[s.v.data];
   if(hi&&hi.soja){
-    pSoja+=' China somou '+f0b(hi.soja.china_net)+' mil t em vendas líquidas, incluindo '+f0b(hi.soja.china_switched_from_unknown)+' mil t transferidas de destinos desconhecidos; o Vietnã registrou '+f0b(hi.soja.vietnam_net)+' mil t, incluindo '+f0b(hi.soja.vietnam_switched_from_unknown)+' mil t reclassificadas de Unknown. Os embarques para a China alcançaram '+f0b(hi.soja.china_exports)+' mil t. Os volumes switched já estão incluídos nos saldos semanais, não são vendas adicionais.';
+    const x=hi.soja;
+    if(Number.isFinite(x.china_net)){
+      pSoja+=' China somou '+f0b(x.china_net)+' mil t em vendas líquidas';
+      if(Number.isFinite(x.china_switched_from_unknown))pSoja+=', incluindo '+f0b(x.china_switched_from_unknown)+' mil t transferidas de destinos desconhecidos';
+      pSoja+='.';
+    }
+    if(Number.isFinite(x.vietnam_net)){
+      pSoja+=' O Vietnã registrou '+f0b(x.vietnam_net)+' mil t';
+      if(Number.isFinite(x.vietnam_switched_from_unknown))pSoja+=', com '+f0b(x.vietnam_switched_from_unknown)+' mil t reclassificadas de UNKNOWN';
+      pSoja+='.';
+    }
+    if(Number.isFinite(x.china_exports))pSoja+=' Os embarques para a China alcançaram '+f0b(x.china_exports)+' mil t.';
+    if(Number.isFinite(x.china_switched_from_unknown))pSoja+=' Os volumes switched já constam nas vendas líquidas; não são negócios adicionais.';
   }
   // farelo
   const fa=dados['farelo'];
   let pFar=(fa.estComb?combSales('Farelo',fa):('Farelo: As vendas somaram '+f0b(fa.v.atual)+' mil toneladas'+(fa.cls?', '+clsTxt[fa.cls]+est2txt(fa.est):'')+'.'))
     +(fa.estComb?' Na safra corrente, a m\u00e9dia de 4 semanas est\u00e1 em ':' M\u00e9dia de 4 semanas em ')+f0b(fa.v.ma4)+' mil t'
     +(fa.v.atual>=fa.v.ma4?', com a demanda de exporta\u00e7\u00e3o sustentada.':'.');
-  if(hi&&hi.farelo)pFar+=' Destaque para Colômbia ('+f0b(hi.farelo.net_destinations.Colombia)+' mil t) e República Dominicana ('+f0b(hi.farelo.net_destinations.Dominican_Republic)+' mil t); a Arábia Saudita recebeu '+f0b(hi.farelo.switched_unknown_to_saudi_arabia)+' mil t reclassificadas de Unknown.';
+  if(hi&&hi.farelo){
+    const x=hi.farelo,nd=x.net_destinations||{};
+    if(Number.isFinite(nd.Mexico)&&Number.isFinite(nd.Colombia))
+      pFar+=' Destaques de originação: México ('+f0b(nd.Mexico)+' mil t) e Colômbia ('+f0b(nd.Colombia)+' mil t).';
+    else if(Number.isFinite(nd.Colombia)&&Number.isFinite(nd.Dominican_Republic))
+      pFar+=' Destaque para Colômbia ('+f0b(nd.Colombia)+' mil t) e República Dominicana ('+f0b(nd.Dominican_Republic)+' mil t).';
+    if(Number.isFinite(x.switched_unknown_to_saudi_arabia))pFar+=' A Arábia Saudita recebeu '+f0b(x.switched_unknown_to_saudi_arabia)+' mil t reclassificadas de UNKNOWN.';
+    if(Number.isFinite(x.switched_unknown_to_vietnam))pFar+=' O Vietnã recebeu '+f0b(x.switched_unknown_to_vietnam)+' mil t transferidas de UNKNOWN.';
+  }
   // oleo
   const ol=dados['oleo'];
   const olMini=Math.abs(ol.v.atual||0)<10;
@@ -2647,7 +2667,18 @@ window.gerarVendTexto=function(card){
     +(tg.estComb?combSales('Trigo',tg):('O trigo, j\u00e1 no MY '+myLbl(tg.ex.my)+', marcou '+f0b(tg.v.atual)+' mil toneladas'
     +(tg.cls?', '+clsTxt[tg.cls]+est2txt(tg.est):'')
     +(tg.v.atualN!=null&&tg.v.atualN>0?' e '+f0b(tg.v.atualN)+' mil t na safra nova':'')+'.'));
-  if(hi&&hi.milho&&hi.trigo)pMT+=' No milho, Unknown, México e Japão lideraram as vendas. O trigo registrou a maior venda líquida da safra, com destaque para Filipinas ('+f0b(hi.trigo.net_destinations.Philippines)+' mil t) e '+f0b(hi.trigo.switched_unknown_to_vietnam)+' mil t transferidas de Unknown para o Vietnã.';
+  if(hi&&hi.milho&&hi.trigo){
+    const co=hi.milho,wh=hi.trigo;
+    if(co.my_high&&Number.isFinite(co.mexico_net))
+      pMT+=' O milho registrou a maior venda líquida do MY, com '+f0b(co.mexico_net)+' mil t para o México.';
+    else if(Number.isFinite(co.net_destinations?.Unknown)&&Number.isFinite(co.net_destinations?.Mexico))
+      pMT+=' No milho, Unknown e México lideraram as vendas.';
+    if(wh.my_low)pMT+=' O trigo registrou a menor venda líquida da temporada.';
+    else if(Number.isFinite(wh.net_destinations?.Philippines))
+      pMT+=' O trigo contou com '+f0b(wh.net_destinations.Philippines)+' mil t para as Filipinas.';
+    if(Number.isFinite(wh.switched_unknown_to_vietnam))
+      pMT+=' Houve '+f0b(wh.switched_unknown_to_vietnam)+' mil t transferidas de UNKNOWN para o Vietnã.';
+  }
   return '<p class="h1">'+h1+'</p>'
     +'<p class="sub">'+sub+'</p>'
     +'<p class="sec">DESTAQUES</p>'
@@ -2705,7 +2736,7 @@ function buildVendTabela(){
       +'<td class="arw">'+seta+'</td><td class="ma etext">'+f(v.ma4)+'</td>'
       +'</tr>';
   });
-  const note=(combinedAny?'<span>'+(pendingEst?'Expectativas para a semana de '+estWeek.slice(8,10)+'/'+estWeek.slice(5,7)+'/'+estWeek.slice(2,4)+' ainda sem resultado oficial. Os realizados exibidos correspondem à semana de '+dtxt+'. Faixas combinadas entre MY, sem divisão publicada por safra.':['2026-10-15','2026-10-22'].includes(dref)?'Estimativas Dow Jones: faixa combinada 26/27 + 27/28 para as cinco commodities, sem divisão publicada por MY; 27/28 = n/d.':'Trigo e óleo de soja: faixas divulgadas sem divisão por MY, exibidas sob 26/27 por alinhamento; 27/28 = n/d.')+'</span>':'')
+  const note=(combinedAny?'<span>'+(pendingEst?'Expectativas para a semana de '+estWeek.slice(8,10)+'/'+estWeek.slice(5,7)+'/'+estWeek.slice(2,4)+' ainda sem resultado oficial. Os realizados exibidos correspondem à semana de '+dtxt+'. Faixas combinadas entre MY, sem divisão publicada por safra.':(combinedAll||['2026-10-15','2026-10-22'].includes(dref))?'Estimativas Dow Jones: faixa combinada 26/27 + 27/28 para as cinco commodities, sem divisão publicada por MY; 27/28 = n/d.':'Trigo e óleo de soja: faixas divulgadas sem divisão por MY, exibidas sob 26/27 por alinhamento; 27/28 = n/d.')+'</span>':'')
     +(dref==='2026-10-08'?'<span>Farelo: faixa pré-relatório publicada como 200–60 mil t, com erro no intervalo; expectativa pendente de confirmação.</span>':'')
     +(priorMY?'<span>Semana anterior de farelo e óleo: safra velha MY 25/26, safra nova MY 26/27. Os anos efetivos est\u00e3o indicados abaixo dos volumes.</span>':'')
     +(mixedMY?'<span>Os anos comerciais variam conforme a commodity; os valores estão identificados por MY.</span>':'');
