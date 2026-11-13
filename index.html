@@ -125,12 +125,13 @@
     "vendas_estimativas": "E.deep.vendEst[<data ISO>] aceita cy:[min,max], nc:[min,max] e comb:[min,max] por commodity. __combined:true continua válido quando TODAS as commodities vêm apenas com faixa total. O modo misto permite split em algumas linhas e comb em outras; comb ocupa Corrente/Total* e Nova fica em travessão. A tabela usa rótulos semânticos Corrente/Nova porque trigo, soja/milho e farelo/óleo viram o MY em datas diferentes. O comentário compara corrente+nova contra comb. As células seguem contenteditable e _vendRestore preserva edições. Nunca inventar split por safra."
   },
   "last_build": {
-    "id": "e101",
-    "data": "2026-11-11",
+    "id": "e102",
+    "data": "2026-11-13",
     "hash_prefix": "sha256[:16] informado na entrega",
-    "resumo": "Gráfico soja China versus não-China restaurado ao desenho compacto da e99 com duas cores, históricos tracejados e hover/crosshair/tooltip da e100. Removidos KPIs e novo layout. Séries USDA/FAS, WASDE, senha e demais gráficos intactos."
+    "resumo": "FAS semanal 05/11/2026 e expectativas Dow Jones incorporados na tabela existente. Vendas por MY, embarques, commitment, países e revisão Holanda/Alemanha. Design e101, WASDE, senha e demais painéis preservados."
   },
   "build_log": [
+    "e102 (13Nov): FAS semanal 05/11/2026 e consenso Dow Jones, cinco commodities, Country Detail, vendas MY corrente/nova, embarques e commitment. Reclassificação oficial Holanda para Alemanha na base restatada de 29/10.",
     "e101 (11Nov): restauração visual e99 e card compacto do gráfico de soja China/não-China, com tooltip/crosshair, teclado e comparador mantidos; sem alterações em dados oficiais, outros cards e senha.",
     "e100 (11Nov): melhoria de design e interatividade do gráfico soja China/Não-China, tooltip com dados por semana e safra, crosshair, traços históricos mais distintos, etiquetas de ponta, cabeçalho/resumo comparativo e atalhos de seleção. Histórico e demais painéis sem modificação.",
     "e99 (11Nov): gráfico exclusivo soja China x Não-China, linhas de commitment acumulado por semana e comparadores multissafras; métricas volume/share. UNKNOWN é residual independente (MUNDO − China − UNKNOWN); sem imputação de faltantes nem alteração em dados FAS/WASDE ou demais telas.",
@@ -360,6 +361,7 @@
 <script id="eua-estimates-2026-10-29" src="data/patches/eua-estimates-2026-10-29.js"></script>
 <script id="eua-data-e96" src="data/patches/eua-data-e96.js"></script>
 <script id="eua-wasde-2026-11-10" src="data/patches/eua-wasde-2026-11-10.js"></script>
+<script id="eua-data-e102" src="data/patches/eua-data-e102.js"></script>
 <script id="brz-china-nonchina" src="js/modules/china-nonchina.js"></script>
 <script id="brz-dyn-native" src="js/charts/dyn-native.js"></script>
 <script id="brz-fit" src="js/charts/fit.js"></script>

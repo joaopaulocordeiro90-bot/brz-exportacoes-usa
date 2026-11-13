@@ -1,4 +1,4 @@
-/* Regressão independente de Supabase: e101 compacta reaplicada sobre e102 com nova semana. */
+/* Regressão independente de Supabase: e102 USDA/FAS reaplicada sobre e103 com nova semana. */
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -27,14 +27,14 @@ const prior=await page.evaluate(()=>{
  saveState();
  return {build:BUILD,old:window.__SAVED__.cards['netsafra|soja'],count:Object.keys(window.__SAVED__.cards).length};
 });
-assert.equal(prior.build,'e101 · 11Nov');
+assert.equal(prior.build,'e102 · 13Nov');
 assert(prior.old.html.includes('OLD DATA'));
 let upgraded=false;
 await page.route('**/js/core/app.js',async route=>{
  const response=await route.fetch();let s=await response.text();
- assert(s.includes("const BUILD='e101 · 11Nov';"));
- s=s.replace("const BUILD='e101 · 11Nov';","const BUILD='e102 · 17Nov';");
- s="E.meta.atual='2026-11-05';\n"+s;
+ assert(s.includes("const BUILD='e102 · 13Nov';"));
+ s=s.replace("const BUILD='e102 · 13Nov';","const BUILD='e103 · 20Nov';");
+ s="E.meta.atual='2026-11-12';\n"+s;
  upgraded=true;
  await route.fulfill({response,body:s});
 });
@@ -60,8 +60,8 @@ assert.equal(after.sub,'Subtítulo personalizado');
 assert.equal(after.fontsize,'22px');
 assert(after.hasSvg);
 assert.equal(after.frozen,false);
-assert.equal(after.dataAtual,'2026-11-05');
-assert.equal(after.sourceBuild,'e101 · 17Nov');
+assert.equal(after.dataAtual,'2026-11-12');
+assert.equal(after.sourceBuild,'e103 · 20Nov');
 assert(after.count>=prior.count);
 assert.deepEqual(errors,[]);
 console.log('STANDALONE REBASE OK',JSON.stringify({count:after.count,build:after.sourceBuild}));

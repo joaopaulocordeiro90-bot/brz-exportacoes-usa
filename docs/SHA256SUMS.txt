@@ -31,6 +31,7 @@ a57a1499c5f67ae1970e3f5922f2d5043a3e3402396eaaf97134f9237962da94  ./data/patches
 848066f9991fde7e21898a2783f5a3d88e11373d8545b0c3941766e0b9c10892  ./data/patches/eua-data-e86.js
 67c534c7038d08152713d9d52dcc7d7e25771e44500aaf35c9d6ca63063cd205  ./data/patches/eua-data-e87.js
 08068b344cd5e2d7f161745d2ba4b28eec05242f387e411a4c9424f7b8668684  ./data/patches/eua-data-e96.js
+c19716029faf557af694ec49607835a78f24dde2803b887b925bc327ceb10b32  ./data/patches/eua-data-e102.js
 010c77b268ca3268f23aa0736460ba4e963ec2cf8a4ea61914cf063c75ad962c  ./data/patches/eua-wasde-2026-11-10.js
 1b66d34f677a93e5359595dacff71f0399ccba86838d2a56ab899c682f0d0024  ./data/patches/eua-estimates-2026-10-29.js
 f56602ae32d6e19d09d610da223da9395d1dc1b5436714a9334afb00e4b92c12  ./data/patches/eua-estimates-e72.js
@@ -38,12 +39,12 @@ f4242427c9c100b7e682f5269d174bbad91b31f45be921cda260b5738b7ccb52  ./data/patches
 dbfd1eda1596e99e9c0be202dca0f932f81f050ae6cd5511a8be0fa0c78cb1ce  ./docs/ARCHITECTURE.md
 f2c997dabb362e349680d2718621a3a75ef379c1d11533d39bffdfb9a84f5bdb  ./docs/MIGRATION_REPORT.md
 85bb91e4ff262fa1cbab3eab5ab7e1033290ca8475e96d9ef0e873ef0c387bbe  ./docs/QA_REPORT.md
-1451566c36cb5c7e7d6275ce1e3a4b5319f13fea6b7884e5e9adb5e010018464  ./index.html
+e82cce9fb84d8479bb0cc64d12ce854f4a5b9ae30827632258106d45da7669b0  ./index.html
 7290ba9cabe38828757812f6d8f33d98a1f2c8d874a49b30aae76a0639fec5bc  ./js/charts/dyn-native.js
 1fa8009ba31a00e34d5e18bfa2d02a3b56d760d530ed296ba719ebe0c7aa4e92  ./js/charts/fit.js
 01960aa34fffd68fe1401de3228d2a83dc2c1c72bab685650ba0d8d52100f5e5  ./js/charts/q-zoom.js
-5513af8598bc48bb3dd3ca3f3f83371bd1e3065dbaaf674769634e5d38d8ca77  ./js/core/app.js
-07de37fa35d5c04e75f6e3150db0a2521af796de2c84954cca0a804041c607ef  ./js/core/export-adapter.js
+6cad3d9b90de5e8c0e03b5130dfb97cb920768070cb252bfe04792727aaea80d  ./js/core/app.js
+63905eaa760fc9fc447c88ebdf0efc4633bfd10499982a2ac9b83e65c9aa5477  ./js/core/export-adapter.js
 8724c131acc3feabdc298d62f059f8d40be9e46368539b4206b46dbaa721629e  ./js/core/gate-handler.js
 5ed408904fe9aba90f913f9444109f3d09079cd0da7e2ebe9d6ac053580c985c  ./js/core/i18n.js
 7c033a7cacd6b0ffad7bdc53462f133b0a11e4ecf36be94dc1ae88593cb2472f  ./js/modules/base-export.js
@@ -52,8 +53,8 @@ bbfaefb1156f5dbdc3e491755fff70e82b7c62b5271087fbf222527e3fe03bba  ./js/modules/c
 fe43060a264619cef8711b04b1757e3fd46e559b12cb7809351d17a4eeabb1fe  ./js/modules/vendas-en.js
 a6f7b88c1a00d661cb937f89a16b004dfe556074a582109f7ad31c85b54d536f  ./js/utils/excel-writer.js
 90f3e9252a062de3c41b8fef94f9d4788398148261a74e8bddf67953bd4e2917  ./README.md
-bc0b8abc6f60c1e5fe886656b8b4d385fd01a1b2c6bc710a564c29d42fddc7d3  ./tools/manifest.json
+798f8f7a5dffc2274e688f103c715d82f47d2433821707cce7227914a1c95dd0  ./tools/manifest.json
 a16cbe885bcd38c2f40a4349da7db8909f5628b0cedd3c241428b4f65258b005  ./tools/modularizar.py
-63b35b51231add787e8e1885232a9b166088d5631b4a15d18187f750ada9e1b9  ./tools/qa_static_smoke.mjs
-bae261720ec1761c293a1b5d71f5a37a813afbd0921f47115c82102933bff98c  ./tools/qa_version_rebase.mjs
+fd0e34c934a419b51aa70df16f98923799ddf210fd8ac0081c392c895b530e04  ./tools/qa_static_smoke.mjs
+6559726e55507e73b7a73db17c35bbe894e25822b4acb7c6307eda8eb55f90bb  ./tools/qa_version_rebase.mjs
 98f61d0e90ccb9b206b1179fc1c99c655ade57acb40538a225687e14ea20d5f4  ./tools/remontar_arquivo_unico.py
