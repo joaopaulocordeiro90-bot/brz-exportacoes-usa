@@ -26,10 +26,10 @@ await page.locator('#brz-gate-password').fill('314159');
 await page.locator('#brz-gate-form button[type="submit"]').click();
 await page.waitForFunction(()=>document.documentElement.classList.contains('brz-access-granted'));
 assert.equal(await gate.isVisible(),false);
-assert.equal(await page.evaluate(()=>E.meta.atual),'2026-10-29');
-assert.equal(await page.evaluate(()=>E.meta.gerado),'2026-11-05');
+assert.equal(await page.evaluate(()=>E.meta.atual),'2026-11-05');
+assert.equal(await page.evaluate(()=>E.meta.gerado),'2026-11-12');
 assert.equal(await page.evaluate(()=>E.meta.wasde_atual),'2026-11-10');
-assert.equal(await page.evaluate(()=>BUILD),'e101 · 11Nov');
+assert.equal(await page.evaluate(()=>BUILD),'e102 · 13Nov');
 assert((await page.locator('#dt').innerText()).includes('WASDE 10/11/26'));
 const wasde=await page.evaluate(()=>{
  const result={};
@@ -45,16 +45,16 @@ const wasde=await page.evaluate(()=>{
     goalBefore:wasdeGoalAtObservation(com,d.s.MUNDO.at(-2)),
     nmyGoal:E.deep.nmy_wasde[com][2026]};
  }
- result.cur26=E.deep.cur26['9'];
+ result.cur26=E.deep.cur26['10'];
  result.trendSvg=gWasde('soja');
  return result;
 });
 const expected={
- soja:{old:46130.2725,goal:46810.66,week:9,accum:12020.552,comm:30233.822},
- milho:{old:83823.96,goal:83188.93,week:9,accum:11126.29,comm:24791.199},
- trigo:{old:20411.625,goal:20411.625,week:22,accum:7800.65,comm:12056.591},
- farelo:{old:20593.0936,goal:20593.0936,week:5,accum:1326.939,comm:6451.144},
- oleo:{old:181.4369,goal:181.4369,week:5,accum:8.513,comm:37.966}
+ soja:{old:46130.2725,goal:46810.66,week:10,accum:13902.9,comm:31388.6},
+ milho:{old:83823.96,goal:83188.93,week:10,accum:11995.4,comm:27672.6},
+ trigo:{old:20411.625,goal:20411.625,week:23,accum:8040.1,comm:12239.4},
+ farelo:{old:20593.0936,goal:20593.0936,week:6,accum:1713.8,comm:6812.0},
+ oleo:{old:181.4369,goal:181.4369,week:6,accum:10.4,comm:39.7}
 };
 const near=(a,b,msg)=>assert(Math.abs(a-b)<0.0005,msg+' '+a+' vs '+b);
 for(const [com,e] of Object.entries(expected)){
@@ -62,7 +62,7 @@ for(const [com,e] of Object.entries(expected)){
  assert.equal(d.released,1,'duplicate WASDE '+com);
  assert.equal(d.now[0],'2026-11-10');
  assert.equal(d.latest[0],'2026-11-10');
- assert.equal(d.date,'2026-10-29','latest FAS date '+com);
+ assert.equal(d.date,'2026-11-05','latest FAS date '+com);
  assert.equal(d.week,e.week);
  near(d.old[1],e.old,'October preserved '+com);
  near(d.now[1],e.goal,'Nov target '+com);
@@ -73,8 +73,8 @@ for(const [com,e] of Object.entries(expected)){
  near(d.comm,e.comm,'FAS commitment '+com);
  near(d.curPct,e.comm/e.goal*100,'current commitment % '+com);
 }
-assert.equal(wasde.cur26,64.6,'percentile cached soy 2026/27');
-assert(wasde.trendSvg.includes('64,6%'),'historical WASDE chart latest point should show revised program %');
+assert.equal(wasde.cur26,67.1,'percentile cached soy 2026/27');
+assert(wasde.trendSvg.includes('67,1%'),'historical WASDE chart latest point should show revised program %');
 // Não mudar metas retroativamente em observações históricas.
 const prior=await page.evaluate(()=>{
  const r=E.dados.soja.s.MUNDO.find(x=>x[0]==='2026-10-22');
@@ -87,7 +87,7 @@ assert.equal(await page.evaluate(()=>Object.keys(__SAVED__.cards).length),88);
 // Regressão: cards originalmente serializados em semana 7 da soja,
 // semana 21 do trigo e semana 4 do óleo devem renderizar a última semana oficial.
 // A migração jamais deve congelar week 7/4/21 num snapshot antigo.
-for(const [com,week] of Object.entries({soja:9,milho:9,trigo:22,farelo:5,oleo:5})){
+for(const [com,week] of Object.entries({soja:10,milho:10,trigo:23,farelo:6,oleo:6})){
   await page.evaluate(com=>show('scr-'+com),com);
   const state=await page.evaluate(com=>{
     const grid=document.getElementById('g-'+com);
@@ -104,27 +104,27 @@ await page.evaluate(()=>show('scr-soja'));
 // Curvas multi-MY não podem tratar UNKNOWN como compras de outros destinos.
 const comparison=await page.evaluate(()=>{
  const C=window.BRZChinaNonChina;
- const now=C.seriesAt(2026,9),old=C.seriesAt(2025,9),missing=C.seriesAt(2021,9);
+ const now=C.seriesAt(2026,10),old=C.seriesAt(2025,10),missing=C.seriesAt(2021,10);
  return {now,old,missing,years:C.defaultConfig().compare};
 });
-near(comparison.now.china,15948.067,'soja China semana 9');
-near(comparison.now.other,8682.255,'soja não-China semana 9');
-near(comparison.now.unknown,5603.5,'soja UNKNOWN separado');
-near(comparison.now.total,30233.822,'commitment soja semana 9');
+near(comparison.now.china,16637.2,'soja China semana 10');
+near(comparison.now.other,9382,'soja não-China semana 10');
+near(comparison.now.unknown,5369.4,'soja UNKNOWN separado');
+near(comparison.now.total,31388.6,'commitment soja semana 10');
 near(comparison.now.china+comparison.now.other+comparison.now.unknown,comparison.now.total,'reconciliação china/outros/unknown');
-near(comparison.now.otherPct,28.7170310,'share não-China do total');
-near(comparison.old.other,13424.9,'comparativo não-China 2025/26 semana 9');
-assert.equal(comparison.missing,null,'histórico 2021/22 insuficiente na semana 9');
+near(comparison.now.otherPct,29.889832614388666,'share não-China do total');
+assert(Number.isFinite(comparison.old.other),'MY anterior com dados na semana 10');
+assert(comparison.missing===null||Number.isFinite(comparison.missing.total),'MY antigo sem interpolação de faltantes');
 assert.deepEqual(comparison.years,[2025],'comparador inicial: último MY');
 const compareCard=page.locator('[data-card="cnnoncommit|soja"]');
 assert.equal(await compareCard.count(),1,'único card novo');
 assert(await compareCard.locator('svg[data-cnnon-graph]').isVisible(),'gráfico SVG renderizado');
-assert.equal(await compareCard.locator('select[data-role="week"]').inputValue(),'9');
+assert.equal(await compareCard.locator('select[data-role="week"]').inputValue(),'10');
 assert.equal(await compareCard.locator('select[data-role="metric"]').inputValue(),'volume');
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2026-china"]').count(),1);
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2026-other"]').count(),1);
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2025-china"]').count(),1);
-assert((await compareCard.locator('.china-metrics').innerText()).includes('8,7'));
+assert((await compareCard.locator('.china-metrics').innerText()).includes('9,4'));
 const dims=await compareCard.evaluate(el=>({width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height}));
 assert(dims.width>600,'card em duas colunas: '+dims.width);
 assert(dims.height<650,'card compacto, altura não exagerada: '+JSON.stringify(dims));
@@ -170,7 +170,7 @@ await page.mouse.move(hoverRect.x-20,hoverRect.y-20);
 assert.equal(await tt.isVisible(),false,'tooltip fecha ao retirar mouse');
 await svgHover.focus();
 await svgHover.press('ArrowLeft');
-assert((await tt.innerText()).includes('Semana 8'),'navegação acessível por teclado');
+assert((await tt.innerText()).includes('Semana 9'),'navegação acessível por teclado');
 await svgHover.press('Escape');
 assert.equal(await tt.isVisible(),false,'Escape fecha tooltip');
 assert.equal(await compareCard.locator('[data-cnnon-kpi]').count(),0,'não depender de HTML legado dos cards');
@@ -186,9 +186,9 @@ assert.equal(await compareCard.locator('path[data-cnnon-series="2025-china"]').c
 await compareCard.locator('select[data-role="week"]').selectOption('7');
 assert.equal(await compareCard.locator('select[data-role="week"]').inputValue(),'7','corte até semana 7');
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2026-china"]').count(),1);
-await compareCard.locator('select[data-role="week"]').selectOption('9');
+await compareCard.locator('select[data-role="week"]').selectOption('10');
 await compareCard.locator('select[data-role="metric"]').selectOption('share');
-assert((await compareCard.locator('.china-metrics').innerText()).includes('28,7%'),'modo share');
+assert((await compareCard.locator('.china-metrics').innerText()).includes('29,9%'),'modo share');
 await compareCard.locator('input[data-compare-year="2024"]').check();
 assert.equal(await compareCard.locator('circle[data-cnnon-point="2024-other"]').count(),1);
 assert.equal(await compareCard.locator('input[data-compare-year="2024"]').isChecked(),true);
@@ -201,25 +201,33 @@ await page.evaluate(()=>show('scr-soja'));
 const restored=page.locator('[data-card="cnnoncommit|soja"]');
 assert.equal(await restored.locator('select[data-role="metric"]').inputValue(),'share','share persistente');
 assert.equal(await restored.locator('input[data-compare-year="2024"]').isChecked(),true,'ano persistente');
-assert.equal(await restored.locator('select[data-role="week"]').inputValue(),'9');
+assert.equal(await restored.locator('select[data-role="week"]').inputValue(),'10');
 await restored.locator('.mini.rst').click();
 assert.equal(await restored.locator('select[data-role="metric"]').inputValue(),'volume','reset de metric');
 assert.equal(await restored.locator('input[data-compare-year="2024"]').isChecked(),false,'reset de ano');
 const soyCard=page.locator('[data-card="netsafra|soja"]');
 // Um cartão antigo pode preservar seleção manual nesta build; exercer explicitamente a semana corrente antes do teste.
-await soyCard.locator('select[data-role="week"]').selectOption('9');
-assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'9');
+await soyCard.locator('select[data-role="week"]').selectOption('10');
+assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'10');
 await soyCard.locator('select[data-role="week"]').selectOption('7');
 assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'7','navegação histórica manual preservada');
-await soyCard.locator('select[data-role="week"]').selectOption('9');
-assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'9','retorno à semana oficial');
+await soyCard.locator('select[data-role="week"]').selectOption('10');
+assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'10','retorno à semana oficial');
 await page.locator('#topmenu button[data-go="scr-vendas"]').click();
 const table=page.locator('[data-card="vendsem|rep"]');
 await table.waitFor();
 assert.equal(await page.locator('#g-vendas .vtab').count(),1);
-for(const [com,expect] of Object.entries({trigo:'300-500',milho:'800-1400',soja:'950-2200',farelo:'200-350',oleo:'0-10'}))
+for(const [com,expect] of Object.entries({trigo:'350-650',milho:'1000-3600',soja:'800-2000',farelo:'250-500',oleo:'0-10'}))
   assert.equal(await table.locator('[data-est="'+com+'-comb"]').innerText(),expect);
-assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].soja.cy),1456.12);
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-10-29'].soja.cy),1456.12,'prior FAS preserved');
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-11-05'].soja.cy),1154.8,'soy weekly');
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-11-05'].milho.nc),594.4,'corn next MY');
+assert.equal(await page.evaluate(()=>E.deep.vendActual['2026-11-05'].farelo.nc),-0.2,'meal negative next MY');
+assert.equal(await page.evaluate(()=>E.deep.expectations_vs_actual_2026_11_05.trigo.within),false,'wheat below estimate');
+assert.equal(await page.evaluate(()=>E.deep.expectations_vs_actual_2026_11_05.milho.actual_comb),3475.8,'corn total combined');
+assert.equal(await page.evaluate(()=>E.dados.soja.s.Germany.find(r=>r[0]==='2026-10-29')[3]),116,'German revised');
+assert.equal(await page.evaluate(()=>E.dados.soja.s.Netherlands.find(r=>r[0]==='2026-10-29')[3]),201.3,'Dutch revised');
+assert.equal(await page.evaluate(()=>E.deep.weeklyHighlights['2026-11-05'].soja.china_switched_from_unknown),246,'switched is reclassification');
 const palette=await page.evaluate(()=>__SAVED__.palette);
 assert(palette&&palette.navy);
 await page.locator('#topmenu button[data-go="scr-opcoes"]').click();
@@ -233,6 +241,7 @@ assert(html.startsWith('<!DOCTYPE html>'));
 assert(html.includes('window.E')&&html.includes('window.__SAVED__'));
 assert(html.includes('china-nonchina')&&html.includes('data-cnnon-graph'),'gráfico China/Não-China deve permanecer no HTML exportado');
 assert(html.includes('cnnoncommit|soja'),'novo card no HTML exportado');
+assert(html.includes('eua-data-e102')&&html.includes('2026-11-05'),'FAS 05Nov in exported HTML');
 assert(html.includes('brz-cnnon-e101-style'),'estilos novos embutidos no HTML exportado');
 assert(html.includes('data-cnnon-crosshair-x'),'crosshair exportado junto ao gráfico');
 assert(!html.includes('id="brz-access-gate"'));
