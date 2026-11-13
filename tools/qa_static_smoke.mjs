@@ -215,7 +215,7 @@ await soyCard.locator('select[data-role="week"]').selectOption('10');
 assert.equal(await soyCard.locator('select[data-role="week"]').inputValue(),'10','retorno à semana oficial');
 await page.locator('#topmenu button[data-go="scr-vendas"]').click();
 const table=page.locator('[data-card="vendsem|rep"]');
-await table.waitFor();
+console.log('page errors before sales table:',errors); await table.waitFor({timeout:8000});
 assert.equal(await page.locator('#g-vendas .vtab').count(),1);
 for(const [com,expect] of Object.entries({trigo:'350-650',milho:'1000-3600',soja:'800-2000',farelo:'250-500',oleo:'0-10'}))
   assert.equal(await table.locator('[data-est="'+com+'-comb"]').innerText(),expect);
