@@ -2011,7 +2011,7 @@ function baixar(el,tit,cwArg,chArg){
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
 }
 
-const BUILD='e102 · 13Nov';
+const BUILD='e103 · 19Nov';
 let LOGO_URL='';
 try{const _b64=null; }catch(e){}
 function _mkLogoUrl(){try{const b64=LOGO_HREF.split(',')[1];const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return URL.createObjectURL(new Blob([u8],{type:'image/png'}));}catch(e){return LOGO_HREF;}}
@@ -2673,9 +2673,13 @@ window.gerarVendTexto=function(card){
       pMT+=' O milho registrou a maior venda líquida do MY, com '+f0b(co.mexico_net)+' mil t para o México.';
     else if(Number.isFinite(co.net_destinations?.Unknown)&&Number.isFinite(co.net_destinations?.Mexico))
       pMT+=' No milho, Unknown e México lideraram as vendas.';
+    else if(Number.isFinite(co.net_destinations?.Mexico))
+      pMT+=' O México respondeu por '+f0b(co.net_destinations.Mexico)+' mil t das vendas de milho.';
     if(wh.my_low)pMT+=' O trigo registrou a menor venda líquida da temporada.';
     else if(Number.isFinite(wh.net_destinations?.Philippines))
       pMT+=' O trigo contou com '+f0b(wh.net_destinations.Philippines)+' mil t para as Filipinas.';
+    else if(Number.isFinite(wh.net_destinations?.Mexico))
+      pMT+=' No trigo, o México somou '+f0b(wh.net_destinations.Mexico)+' mil t em vendas líquidas.';
     if(Number.isFinite(wh.switched_unknown_to_vietnam))
       pMT+=' Houve '+f0b(wh.switched_unknown_to_vietnam)+' mil t transferidas de UNKNOWN para o Vietnã.';
   }
