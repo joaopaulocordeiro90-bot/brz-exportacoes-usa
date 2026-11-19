@@ -148,6 +148,11 @@
    "path": "data/patches/eua-data-e102.js"
   },
   {
+   "open_mod": "<script id=\"eua-data-e103\" src=\"data/patches/eua-data-e103.js\">",
+   "open": "<script id=\"eua-data-e103\">",
+   "path": "data/patches/eua-data-e103.js"
+  },
+  {
    "open_mod": "<script id=\"brz-china-nonchina\" src=\"js/modules/china-nonchina.js\">",
    "open": "<script id=\"brz-china-nonchina\">",
    "path": "js/modules/china-nonchina.js"
